@@ -17,17 +17,29 @@ import 'sync_providers.dart';
 
 /// "On server / Local only / Sync pending / Sync failed / Needs review".
 class SyncStatusBadge extends StatelessWidget {
-  const SyncStatusBadge({super.key, required this.record, this.dense = true});
+  const SyncStatusBadge({super.key, required this.record, this.dense = true, this.short = false});
   final EmployeeRecord record;
   final bool dense;
+
+  /// One-word labels for narrow table columns.
+  final bool short;
 
   @override
   Widget build(BuildContext context) {
     final s = record.status;
-    final review = record.local?.needsReconciliation == true && s == SyncStatus.failed;
+    final review = s == SyncStatus.reconciliationRequired;
     return AppPill(
       key: Key('sync-badge-${s.code}'),
-      label: record.statusLabel,
+      label: !short
+          ? record.statusLabel
+          : switch (s) {
+              SyncStatus.synced => 'On server',
+              SyncStatus.localOnly => 'Local',
+              SyncStatus.pendingSync => 'Pending',
+              SyncStatus.syncing => 'Syncing',
+              SyncStatus.failed => 'Failed',
+              SyncStatus.reconciliationRequired => 'Review',
+            },
       color: review ? AppColors.warning : s.color,
       icon: review ? Icons.help_outline_rounded : s.icon,
       dense: dense,

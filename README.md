@@ -1,8 +1,8 @@
-# Enrolly
+# SNOWTEX Employee Enrollment System
 
-**Employee Enrollment & Identity Management.**
+**SNOWTEX — Employee Enrollment.**
 
-Enrolly is a Flutter app for registering employees with a photograph and browsing employee records. It is the client for the Spring Boot enrollment backend: the app collects the employee's details and photo, and the backend stores the employee, builds the face template and adds them to the recognition watch list. The same codebase runs on **Android**, **iOS** and **desktop/mobile web browsers**.
+SNOWTEX Employee Enrollment is a Flutter app for registering employees with a photograph and browsing employee records. It is the client for the Spring Boot enrollment backend: the app collects the employee's details and photo, and the backend stores the employee, builds the face template and adds them to the recognition watch list. The same codebase runs on **Android**, **iOS** and **desktop/mobile web browsers**.
 
 - The backend is the source of truth. Registrations are saved on the device first and synchronized, so nothing is lost while offline.
 - The app does not detect or recognise faces. It only captures or uploads the photograph.
@@ -32,11 +32,28 @@ All backend URLs are in **`lib/core/config/environment_registry.dart`**:
 ```dart
 static const definitions = <EnvironmentDefinition>[
   EnvironmentDefinition(id: 'local', name: 'Local', localPort: 8080, allowDebugFeatures: true),
-  EnvironmentDefinition(id: 'development', name: 'Development', baseUrl: 'http://27.147.174.107:8085'),
+  EnvironmentDefinition(id: 'development', name: 'Development', baseUrl: null),   // UNCONFIGURED
   EnvironmentDefinition(id: 'qa', name: 'QA', baseUrl: null),                     // UNCONFIGURED
-  EnvironmentDefinition(id: 'production', name: 'Production', baseUrl: null, isProduction: true), // UNCONFIGURED
+  EnvironmentDefinition(
+    id: 'production', name: 'Production', isProduction: true,
+    baseUrl: 'http://27.147.174.107:8085',        // API origin (the app adds /api)
+    websiteUrl: 'http://27.147.174.107:8085/',    // SNOWTEX web portal, kept separate
+  ),
 ];
 ```
+
+- Development and QA URLs have not been provided, so they stay unconfigured (greyed out in the environment picker; building for them fails with a clear message).
+- `baseUrl` (API) and `websiteUrl` (web portal) are configured separately. Today the same Spring Boot server serves both.
+
+#### Production over plain HTTP (security gate)
+
+The production server is currently **plain HTTP on a public IP**. Passwords, tokens and employee photographs would cross the network unencrypted. A production build therefore **refuses to start** unless you acknowledge this explicitly:
+
+```bash
+--dart-define=APP_ENV=production --dart-define=ALLOW_INSECURE_PRODUCTION=true
+```
+
+When HTTPS is available, change `baseUrl` to `https://…` and drop the flag. The login screen shows a "connection is not encrypted" note whenever the active server is HTTP.
 
 - **To configure an environment**, set its `baseUrl` to the server origin, without `/api`. For example: `baseUrl: 'https://qa-api.example.com'`.
 - **To add an environment**, append an `EnvironmentDefinition` with a new `id`.
@@ -106,19 +123,22 @@ Settings → **Environment configuration** (also in the desktop sidebar) shows:
 | Flavor | Android app id | iOS bundle id | Cleartext HTTP (Android) |
 |---|---|---|---|
 | `local` | `com.example.cctv_app.local` | `com.kit.cctvApp.local` | allowed (backend on your machine) |
-| `development` | `….dev` | `….dev` | allowed (server is plain HTTP) |
-| `qa` | `….qa` | `….qa` | HTTPS only |
-| `production` | `com.example.cctv_app` | `com.kit.cctvApp` | HTTPS only |
+| `development` | `….dev` | `….dev` | allowed |
+| `qa` | `….qa` | `….qa` | allowed |
+| `production` | `com.example.cctv_app` | `com.kit.cctvApp` | HTTPS only, except `27.147.174.107` |
 
 ```bash
-flutter run --flavor qa --dart-define=APP_ENV=qa
-flutter build apk --release --flavor production --dart-define=APP_ENV=production
-flutter build ipa --flavor production --dart-define=APP_ENV=production
+# Development (local backend, demo login available)
+flutter build apk --release --flavor development --dart-define=APP_ENV=local
+# Production (client mode, no demo, HTTP acknowledged)
+flutter build apk --release --flavor production --dart-define=APP_ENV=production --dart-define=ALLOW_INSECURE_PRODUCTION=true
+flutter build ipa --flavor production --dart-define=APP_ENV=production --dart-define=ALLOW_INSECURE_PRODUCTION=true
+flutter build web --release --dart-define=APP_ENV=production --dart-define=ALLOW_INSECURE_PRODUCTION=true
 ```
 
-- Each flavor gets its own app id and launcher name (e.g. "Enrolly QA"), so several flavors can be installed side by side.
+- Each flavor gets its own app id and launcher name (SNOWTEX, SNOWTEX Local, SNOWTEX Dev, SNOWTEX QA), so several flavors can be installed side by side.
 - `pubspec.yaml` sets `default-flavor: local`, so a plain `flutter run` or `flutter build apk` still works.
-- **Android**: flavors are defined in `android/app/build.gradle.kts`. Cleartext HTTP is allowed only in the `local` flavor, through a manifest placeholder. It is never enabled globally. If a dev or QA server really is plain HTTP, change that flavor's `usesCleartextTraffic`.
+- **Android**: flavors are defined in `android/app/build.gradle.kts`. Cleartext rules live in per-flavor `res/xml/network_security_config.xml` files. The `main` config is HTTPS-only; `production` allows cleartext only for the `27.147.174.107` host (remove that `domain-config` once the server has HTTPS).
 - **iOS**: schemes and `Debug-/Release-/Profile-<flavor>` build configurations are generated by `ruby tool/ios_flavors.rb`. Run `cd ios && pod install` afterwards. The script is idempotent: add a flavor to its `FLAVORS` map and re-run it. App Transport Security already exempts `localhost` and IP addresses, so the local backend works without weakening ATS.
 - **Web** ignores flavors. Use `--dart-define=APP_ENV=…`.
 
@@ -126,7 +146,7 @@ flutter build ipa --flavor production --dart-define=APP_ENV=production
 
 | | Production (client mode) | Local / Development / QA (admin mode) |
 |---|---|---|
-| Navigation | Dashboard, Employees, Register, Synchronization, Settings | the same, plus Environment Configuration and Diagnostics |
+| Navigation | Dashboard, Register Employee, Employees · Synchronization, Settings | the same, plus Environment and Diagnostics |
 | Environment badge / backend URLs | hidden | shown |
 | Diagnostics (network inspector, sync log, local database, test data) | not compiled in | available |
 | Settings | profile, appearance, camera, sync, connection, data, privacy, about | the same, plus backend, build info and connection-check interval |
@@ -183,7 +203,8 @@ Storage uses Hive: app-private files on Android and iOS, IndexedDB on the web. R
 | `PENDING_SYNC` | Waiting to be uploaded |
 | `SYNCING` | Upload in progress |
 | `SYNCED` | On the server |
-| `FAILED` | The last attempt failed; the record is safe on the device. Shown as **Needs review** when the outcome was uncertain |
+| `FAILED` | The server rejected the upload or it definitely did not arrive; the record is safe on the device and is retried |
+| `RECONCILIATION_REQUIRED` | The outcome is unknown (e.g. the connection dropped after sending). Shown as **Needs review**. Before any re-upload the app searches the server list for a matching employee, so a duplicate is not created |
 
 ### Synchronization
 
@@ -232,6 +253,13 @@ This greatly reduces duplicates but **cannot guarantee** none. See the backend r
    - Without CORS, a browser can send a registration but not read the response. The app then treats the outcome as uncertain and reconciles before retrying.
 
 ## Backend integration
+
+### What the SNOWTEX server exposes (investigated)
+
+- `http://27.147.174.107:8085/` is a Spring Boot app serving both the web portal and `/api` from one origin.
+- Auth: `GET /api/auth/csrf`, `POST /api/auth/login` → `{token, role, username, expiresIn}` (also an HttpOnly cookie), `GET /api/auth/session` → `{expiresAt, username, role}`, `POST /api/auth/logout`.
+- Employees: `POST /api/employee/add` (multipart), `GET /api/employee/list`, `GET /api/employee/{id}/photo` (authenticated).
+- The web portal has no role-specific UI and no employee edit/delete, and no such endpoints were found.
 
 ### Register an employee: `POST /api/employee/add`
 
@@ -315,8 +343,10 @@ tool/
   - The repository drives the list query and pages.
   - When the environment changes, Riverpod rebuilds this chain.
 - **Navigation**: GoRouter.
-  - Phones: bottom bar with Dashboard, Employees, a raised **Register** button, Activity and Settings.
-  - Tablets and desktops: a collapsible sidebar with Dashboard, Employee Management, Register Employee, Settings, Environment Configuration and Logout.
+  - Phones: bottom bar with Home, Employees, a raised **Register** button, Sync and Settings.
+  - Tablets and desktops: a collapsible sidebar. Primary: Dashboard, Register Employee, Employees. Secondary: Synchronization, Settings (plus Environment and Diagnostics in admin builds).
+- **Connection status**: nothing is shown while everything works. A status line appears only for problems ("You're offline. Your registrations are safe." / "Unable to reach the server. You can continue working with locally stored records."), pending uploads, demo mode, or a non-production environment.
+- **Employee directory**: desktop table (photo, employee no., name, designation, date of birth, enrollment date, source, sync status, actions for admins); cards on phones; debounced search; filters All / Photo / Camera / Local only / On server / Pending / Failed.
 - **Employee profile**: the backend has no get-by-id, update or delete endpoint. The profile is opened from the list and is read-only.
 
 ## Authentication
@@ -327,11 +357,22 @@ tool/
   - Success: `{token, role, username, expiresIn}` (expiry in seconds).
   - Wrong credentials: 401 `{message}`.
 - **Authenticated requests:** the token is sent as `Authorization: Bearer …` on every request. Employee endpoints require it.
-- **CSRF:** Spring Security CSRF uses an `XSRF-TOKEN` cookie. On the first sign-in the server answers 403 with a token; the app stores it and retries once with `X-XSRF-TOKEN`. Bearer requests don't need CSRF.
+- **CSRF:** before signing in the app calls `GET /api/auth/csrf` (`{headerName, token}` plus an `XSRF-TOKEN` cookie) and sends `X-XSRF-TOKEN` with the login. If that endpoint is missing, it falls back to the 403 challenge and retries once. Bearer requests don't need CSRF.
+- **Session restore:** a remembered session is checked with `GET /api/auth/session` (`{expiresAt, username, role}`) at start-up. A 401 signs out; if the server can't be reached the session is kept so offline work continues.
 - **Session storage:** with "Remember me" on, the session is kept in `flutter_secure_storage` (30-minute expiry). With it off, it lives in memory only.
 - **Session expiry:** a 401 on any request signs the user out with "Your session has expired."
 - **Logout** calls `POST /api/auth/logout` and then clears the stored session.
 - **Offline:** sign-in is refused without a network connection.
+
+**Roles.** The role comes from the login/session response (`role`). `admin`, `ROLE_ADMIN` and `administrator` are treated as administrators (`lib/features/authentication/domain/permissions.dart`).
+
+| | Administrator | Other roles |
+|---|---|---|
+| Register, view employees | yes | yes |
+| Edit / Delete buttons (directory table, profile) | shown; each opens "Employee editing/deletion is not currently available. This feature will be enabled in a future update." | not shown |
+| Admin-only routes (`/employees/:id/edit`, `/employees/:id/delete`) | allowed | redirected to the dashboard |
+
+These are client-side checks only. **The backend must enforce roles itself**; nothing in the API investigated so far shows role-based authorization.
 
 **Demo login** (local/development/QA builds only): **Continue with Demo Account** (`demo` / `Demo@123`).
 
@@ -353,7 +394,8 @@ flutter test test/live --dart-define-from-file=config/local.secrets.json
 
 - The app follows the device's light/dark setting by default (`ThemeMode.system`) and updates live when the setting changes.
 - Settings → Appearance offers **System / Light / Dark**.
-- The dark theme is its own warm charcoal palette with the same peach accent, not an inversion of the light theme.
+- Corporate SNOWTEX blue (`#205CA4`, sampled from the logo) on white/light grey. The dark theme is a navy palette with a lighter blue accent (`#7DB3F0`) for contrast, not an inversion.
+- Typography: Inter, bundled in `assets/fonts` (no runtime font downloads).
 - Colours come from `AppPalette` (a `ThemeExtension`) and the `ColorScheme`. Widgets do not hard-code light colours.
 
 ## Performance work
@@ -380,13 +422,10 @@ These changes were checked by reading the code and by tests. They have not been 
 
 ## Branding and app icon
 
-- The supplied photograph is kept unchanged in `assets/branding/source_photo.jpg`.
-- `dart run tool/generate_branding.dart` crops it into these files:
-  - `app_icon.png` (iOS, web, macOS, legacy Android)
-  - `adaptive_background.png` (an Android adaptive icon, with a wider crop so the face stays inside the mask)
-  - `app_logo.png` (256 px, the in-app logo)
-- `dart run flutter_launcher_icons` then generates all the launcher icon sizes. The web favicon is a 64 px version of the logo.
-- To rebrand, change the name in `lib/core/constants/app_constants.dart` and the photo in `assets/branding/`, then re-run both commands.
+- The supplied SNOWTEX logo is kept unchanged in `assets/branding/snowtex_logo.jpg` (200 × 200 px).
+- `dart run tool/generate_branding.dart` produces `app_icon.png` (1024 px), `adaptive_foreground.png` (Android adaptive icon on a `#205CA4` background) and `app_logo.png` (256 px, in-app logo).
+- `dart run flutter_launcher_icons` then generates all launcher icon sizes.
+- **The source logo is only 200 px**, so the 1024 px store icon is upscaled. Replace `snowtex_logo.jpg` with a vector or ≥1024 px original and re-run both commands before store submission.
 
 ## Testing
 
@@ -400,6 +439,7 @@ flutter test
 | API | multipart field names and content type, ISO date format, photo part, 10 MB and format validation, 201 parsing, watch-list warning treated as success, list parsing with nulls, query parameters (page, size cap, search, source), error mapping for each status and network failure, photo URL resolution (including context paths), repository cache and TTL |
 | Environments | localhost per platform, LAN host override, APP_ENV versus flavor, unconfigured and unknown environments fail, invalid and non-HTTPS production URLs, production lock, runtime switching (base URL, query reset, per-environment cache, photo URLs), persistence, connection status |
 | Themes | system light and dark, live updates, manual overrides, returning to System, dark palette |
+| Auth & roles | CSRF pre-fetch and 403 fallback, session restore validation (OK / 401 / unreachable), role mapping, admin Edit/Delete messages, no actions for non-admins, admin route guard |
 | UI | every page at 4 screen sizes with no overflow, navigation items, dashboard figures including "unavailable", list loading, error, retry, debounced search, filters and pagination, profile fields, registration validation, success and warning screens |
 
 The tests run against the real Dio client with a fake HTTP adapter (`test/helpers/test_env.dart`). No server is needed.
@@ -407,7 +447,13 @@ The tests run against the real Dio client with a fake HTTP adapter (`test/helper
 **Live smoke test** (opt-in, safe for live servers; it never creates an employee):
 
 ```bash
-flutter test test/live --dart-define=LIVE_API_BASE_URL=http://27.147.174.107:8085
+flutter test test/live --dart-define-from-file=config/local.secrets.json
+```
+
+**Visual audit**: renders every screen at 360/390/820/1440 px, light and dark, to PNG files:
+
+```bash
+flutter test test/visual --dart-define=SCREENSHOT_DIR=/tmp/snowtex-shots
 ```
 
 ## Backend requirements and known limitations
@@ -415,6 +461,11 @@ flutter test test/live --dart-define=LIVE_API_BASE_URL=http://27.147.174.107:808
 - **CORS (web)**: the browser blocks API calls and photo downloads unless the backend allows the web app's origin, for example `http://localhost:<port>` during `flutter run -d chrome`. Add CORS for `/api/**` on the Spring side. If photos are blocked, the app falls back to an `<img>` element.
 - **Upload size**: Spring Boot's default multipart limit is 1 MB. Set `spring.servlet.multipart.max-file-size=10MB` and `max-request-size` to at least 10 MB so that web uploads, which are not downscaled, work up to the 10 MB the form allows.
 - **Enrollment source**: the backend decides `enrollmentSource`. A photo taken with the app's camera is still uploaded through `/employee/add`, so it is recorded as the backend chooses, probably `photo`.
-- **Not available yet**: there are no backend endpoints for get-by-id, update, delete, authentication or statistics, so the app offers none of these features. Deep links to an employee profile only work from the list.
+- **Security**:
+  - Production is plain HTTP on a public IP (see the gate above). Move it behind HTTPS before handling real employee data.
+  - Rotate the administrator password that was shared during development before production use.
+  - Roles are enforced only in the app; the backend must enforce them too.
+  - `POST /api/employee/add` has no idempotency key, so duplicate protection relies on the app's reconciliation search.
+- **Not available yet**: there are no backend endpoints for get-by-id, update, delete or statistics, so the app offers none of these features. Deep links to an employee profile only work from the list.
 - **Order**: the list's sort order is defined by the backend.
 - **Device testing**: camera capture has been verified to build on Android, iOS and web, but not tested on physical devices in this round.

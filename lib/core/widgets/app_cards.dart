@@ -97,7 +97,7 @@ class AppStatCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.icon,
-    this.accent = AppColors.peach,
+    this.accent = AppColors.primary,
     this.caption,
     this.dark = false,
     this.onTap,

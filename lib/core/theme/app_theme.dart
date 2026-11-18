@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -8,22 +7,19 @@ import 'app_spacing.dart';
 class AppTheme {
   AppTheme._();
 
-  /// Disabled in widget tests so no font downloads are attempted.
-  static bool useGoogleFonts = true;
+  /// Bundled font family (assets/fonts), so text renders identically
+  /// offline and nothing is downloaded at runtime.
+  static const fontFamily = 'Inter';
 
   static ThemeData light() => _build(AppPalette.light, Brightness.light);
   static ThemeData dark() => _build(AppPalette.dark, Brightness.dark);
 
   static TextTheme _textTheme(AppPalette p) {
-    TextStyle heading(double size, FontWeight w, {double h = 1.2}) {
-      final base = TextStyle(fontSize: size, fontWeight: w, height: h, color: p.text, letterSpacing: -0.2);
-      return useGoogleFonts ? GoogleFonts.poppins(textStyle: base) : base;
-    }
+    TextStyle heading(double size, FontWeight w, {double h = 1.25}) =>
+        TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: w, height: h, color: p.text, letterSpacing: -0.2);
 
-    TextStyle body(double size, FontWeight w, {Color? c, double h = 1.45}) {
-      final base = TextStyle(fontSize: size, fontWeight: w, height: h, color: c ?? p.text);
-      return useGoogleFonts ? GoogleFonts.inter(textStyle: base) : base;
-    }
+    TextStyle body(double size, FontWeight w, {Color? c, double h = 1.45}) =>
+        TextStyle(fontFamily: fontFamily, fontSize: size, fontWeight: w, height: h, color: c ?? p.text);
 
     return TextTheme(
       displayLarge: heading(44, FontWeight.w600, h: 1.1),
@@ -48,9 +44,9 @@ class AppTheme {
     final textTheme = _textTheme(p);
     final scheme = ColorScheme(
       brightness: brightness,
-      primary: AppColors.peach,
+      primary: brightness == Brightness.dark ? p.accent : AppColors.primary,
       onPrimary: AppColors.white,
-      secondary: AppColors.peachSoft,
+      secondary: AppColors.primarySoft,
       onSecondary: AppColors.white,
       error: AppColors.error,
       onError: AppColors.white,
@@ -63,7 +59,7 @@ class AppTheme {
       surfaceContainerHigh: p.backgroundAlt,
       surfaceContainerHighest: p.backgroundAlt,
       primaryContainer: p.accentTint,
-      onPrimaryContainer: brightness == Brightness.dark ? AppColors.peachSoft : const Color(0xFF8A3D17),
+      onPrimaryContainer: brightness == Brightness.dark ? AppColors.primarySoft : AppColors.primaryDark,
       outline: p.border,
       outlineVariant: p.border,
       shadow: Colors.black,
@@ -78,6 +74,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: p.background,
@@ -102,11 +99,11 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.md),
         hintStyle: textTheme.bodyMedium?.copyWith(color: p.textMuted),
         labelStyle: textTheme.bodyMedium?.copyWith(color: p.textMuted),
-        floatingLabelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w600),
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
         errorStyle: textTheme.bodySmall?.copyWith(color: AppColors.error),
         border: inputBorder,
         enabledBorder: inputBorder,
-        focusedBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.peach, width: 1.6)),
+        focusedBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.primary, width: 1.6)),
         errorBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.2)),
         focusedErrorBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.6)),
         prefixIconColor: p.textMuted,
@@ -115,26 +112,26 @@ class AppTheme {
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         side: BorderSide(color: p.textMuted, width: 1.4),
-        fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.peach : null),
+        fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.primary : null),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected) ? AppColors.white : p.textMuted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? AppColors.peach : p.backgroundAlt,
+          (s) => s.contains(WidgetState.selected) ? AppColors.primary : p.backgroundAlt,
         ),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.peach,
+        activeTrackColor: AppColors.primary,
         inactiveTrackColor: p.backgroundAlt,
-        thumbColor: AppColors.peach,
-        overlayColor: AppColors.peach.withValues(alpha: 0.15),
+        thumbColor: AppColors.primary,
+        overlayColor: AppColors.primary.withValues(alpha: 0.15),
         valueIndicatorColor: p.nav,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: AppColors.peach,
+        color: AppColors.primary,
         linearTrackColor: p.backgroundAlt,
         circularTrackColor: p.backgroundAlt,
       ),
@@ -166,15 +163,15 @@ class AppTheme {
       datePickerTheme: DatePickerThemeData(
         backgroundColor: p.card,
         surfaceTintColor: Colors.transparent,
-        headerBackgroundColor: AppColors.peach,
+        headerBackgroundColor: AppColors.primary,
         headerForegroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: Radii.lgAll),
-        rangeSelectionBackgroundColor: AppColors.peach.withValues(alpha: 0.18),
+        rangeSelectionBackgroundColor: AppColors.primary.withValues(alpha: 0.18),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          selectedBackgroundColor: AppColors.peach.withValues(alpha: 0.16),
-          selectedForegroundColor: brightness == Brightness.dark ? AppColors.peachSoft : const Color(0xFFB34E1F),
+          selectedBackgroundColor: AppColors.primary.withValues(alpha: 0.16),
+          selectedForegroundColor: brightness == Brightness.dark ? AppColors.primarySoft : AppColors.primary,
           foregroundColor: p.text,
           side: BorderSide(color: p.border),
         ),
@@ -191,9 +188,9 @@ class AppTheme {
         textStyle: textTheme.bodySmall?.copyWith(color: AppColors.white),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppColors.peach,
-        selectionColor: AppColors.peach.withValues(alpha: 0.3),
-        selectionHandleColor: AppColors.peach,
+        cursorColor: AppColors.primary,
+        selectionColor: AppColors.primary.withValues(alpha: 0.3),
+        selectionHandleColor: AppColors.primary,
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

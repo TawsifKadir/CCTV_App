@@ -6,6 +6,12 @@ class ApiEndpoints {
   /// POST application/json: {"username", "password"}.
   static const authLogin = '/auth/login';
 
+  /// GET → {"headerName": "X-XSRF-TOKEN", "token": "…"} (+ XSRF-TOKEN cookie)
+  static const authCsrf = '/auth/csrf';
+
+  /// GET → {"username", "role", "expiresAt"}; 401 when the session is gone.
+  static const authSession = '/auth/session';
+
   /// POST → {"signedOut": true}
   static const authLogout = '/auth/logout';
 

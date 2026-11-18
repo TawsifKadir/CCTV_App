@@ -250,7 +250,7 @@ class _EnvOption extends StatelessWidget {
           children: [
             Icon(
               selected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-              color: selected ? AppColors.peach : p.textMuted,
+              color: selected ? AppColors.primary : p.textMuted,
             ),
             const SizedBox(width: Space.sm),
             Expanded(

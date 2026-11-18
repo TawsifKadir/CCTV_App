@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../core/widgets/brand_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -127,7 +129,13 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Employee details', style: t.titleMedium),
+            Row(
+              children: [
+                const StepBadge(2),
+                const SizedBox(width: Space.xs),
+                Expanded(child: Text('Employee details', style: t.titleMedium)),
+              ],
+            ),
             const SizedBox(height: 4),
             Text('All fields are required.', style: t.bodySmall),
             const SizedBox(height: Space.lg - 4),

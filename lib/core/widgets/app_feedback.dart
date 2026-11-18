@@ -49,7 +49,7 @@ class AppEmptyState extends StatelessWidget {
                     width: size,
                     height: size,
                     decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
-                    child: Icon(icon, size: size * 0.42, color: AppColors.peach),
+                    child: Icon(icon, size: size * 0.42, color: context.palette.accent),
                   ),
                 ],
               ),
@@ -146,7 +146,7 @@ class AppConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final color = destructive ? AppColors.error : AppColors.peach;
+    final color = destructive ? AppColors.error : AppColors.primary;
     return Dialog(
       insetPadding: const EdgeInsets.all(Space.lg),
       child: ConstrainedBox(
@@ -211,7 +211,7 @@ void showAppSnack(BuildContext context, String message, {SnackType type = SnackT
     SnackType.success => (Icons.check_circle_rounded, AppColors.success),
     SnackType.error => (Icons.error_rounded, AppColors.error),
     SnackType.warning => (Icons.warning_amber_rounded, AppColors.warning),
-    SnackType.info => (Icons.info_rounded, AppColors.peachSoft),
+    SnackType.info => (Icons.info_rounded, AppColors.primarySoft),
   };
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;

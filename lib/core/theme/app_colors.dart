@@ -6,22 +6,49 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const ivory = Color(0xFFF4F1E9);
-  static const sand = Color(0xFFEAE6DA);
-  static const peach = Color(0xFFFF9966);
-  static const peachSoft = Color(0xFFF8A477);
-  static const peachTint = Color(0xFFFFE6D9);
-  static const charcoal = Color(0xFF252525);
-  static const charcoalSoft = Color(0xFF333333);
-  static const ink = Color(0xFF222222);
-  static const muted = Color(0xFF85837E);
-  static const white = Color(0xFFFFFFFF);
-  static const border = Color(0xFFEAE7DF);
+  // SNOWTEX brand (primary = the logo's blue).
+  static const primary = Color(0xFF205CA4);
+  static const primaryDark = Color(0xFF174779);
+  static const primarySoft = Color(0xFF4A82C6);
+  static const primaryTint = Color(0xFFEAF2FC);
 
-  static const success = Color(0xFF6FAF88);
-  static const warning = Color(0xFFE8B15B);
-  static const error = Color(0xFFD96C64);
-  static const info = Color(0xFF7A9CC6);
+  /// Highlight on the dark-blue navigation surfaces (readable on primaryDark).
+  static const navAccent = Color(0xFFA9CCF5);
+
+  static const background = Color(0xFFF5F7FA);
+  static const surfaceAlt = Color(0xFFEDF1F6);
+  static const ink = Color(0xFF202938);
+  static const muted = Color(0xFF64748B);
+  static const white = Color(0xFFFFFFFF);
+  static const border = Color(0xFFE1E6EE);
+
+  static const success = Color(0xFF249B69);
+  static const warning = Color(0xFFE5A23B);
+  static const error = Color(0xFFD94B4B);
+  static const info = Color(0xFF3B82C4);
+
+  /// Brand gradient (deep → logo blue) for hero surfaces. Same palette,
+  /// just given depth.
+  static const brandGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF133C69), primaryDark, primary],
+    stops: [0, 0.45, 1],
+  );
+
+  /// Vertical variant for the navigation sidebar.
+  static const navGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primaryDark, Color(0xFF123A66)],
+  );
+
+  /// Primary call-to-action gradient (subtle, left → right).
+  static const actionGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [primary, Color(0xFF2C6DBB)],
+  );
 }
 
 /// Theme-dependent surface/text colours exposed as a [ThemeExtension].
@@ -38,6 +65,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.navText,
     required this.shadow,
     required this.accentTint,
+    required this.accent,
   });
 
   final Color background;
@@ -51,32 +79,37 @@ class AppPalette extends ThemeExtension<AppPalette> {
   final Color shadow;
   final Color accentTint;
 
+  /// Brand blue for icons, links and highlights on this theme's surfaces
+  /// (lighter in dark mode for contrast).
+  final Color accent;
+
   static const light = AppPalette(
-    background: AppColors.ivory,
-    backgroundAlt: AppColors.sand,
+    background: AppColors.background,
+    backgroundAlt: AppColors.surfaceAlt,
     card: AppColors.white,
     text: AppColors.ink,
     textMuted: AppColors.muted,
     border: AppColors.border,
-    nav: AppColors.charcoal,
+    nav: AppColors.primaryDark,
     navText: AppColors.white,
-    shadow: Color(0x14000000),
-    accentTint: AppColors.peachTint,
+    shadow: Color(0x12172B4D),
+    accentTint: AppColors.primaryTint,
+    accent: AppColors.primary,
   );
 
-  /// Warm deep-charcoal dark theme: same identity, not an inversion.
-  /// Surfaces step up in lightness for elevation; the peach accent stays.
+  /// Dark navy theme: same SNOWTEX identity, readable contrast.
   static const dark = AppPalette(
-    background: Color(0xFF171614),
-    backgroundAlt: Color(0xFF221F1C),
-    card: Color(0xFF242220),
-    text: Color(0xFFF2EEE6),
-    textMuted: Color(0xFFA8A49B),
-    border: Color(0xFF36332E),
-    nav: Color(0xFF0F0E0D),
+    background: Color(0xFF0E1726),
+    backgroundAlt: Color(0xFF16233A),
+    card: Color(0xFF152238),
+    text: Color(0xFFEAF0F8),
+    textMuted: Color(0xFF9FB0C8),
+    border: Color(0xFF2A3B56),
+    nav: Color(0xFF0A1220),
     navText: AppColors.white,
-    shadow: Color(0x59000000),
-    accentTint: Color(0xFF3D2A20),
+    shadow: Color(0x55000000),
+    accentTint: Color(0xFF1C3558),
+    accent: Color(0xFF7DB3F0),
   );
 
   @override
@@ -91,6 +124,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? navText,
     Color? shadow,
     Color? accentTint,
+    Color? accent,
   }) {
     return AppPalette(
       background: background ?? this.background,
@@ -103,6 +137,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       navText: navText ?? this.navText,
       shadow: shadow ?? this.shadow,
       accentTint: accentTint ?? this.accentTint,
+      accent: accent ?? this.accent,
     );
   }
 
@@ -120,6 +155,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
       navText: Color.lerp(navText, other.navText, t)!,
       shadow: Color.lerp(shadow, other.shadow, t)!,
       accentTint: Color.lerp(accentTint, other.accentTint, t)!,
+      accent: Color.lerp(accent, other.accent, t)!,
     );
   }
 }

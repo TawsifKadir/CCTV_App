@@ -18,24 +18,24 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Enrolly — Employee Enrollment &amp; Identity Management.">
-  <meta name="theme-color" content="#F4F1E9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#171614" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="SNOWTEX Employee Enrollment System">
+  <meta name="theme-color" content="#F5F7FA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E1726" media="(prefers-color-scheme: dark)">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Enrolly">
+  <meta name="apple-mobile-web-app-title" content="SNOWTEX">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Enrolly</title>
+  <title>SNOWTEX Employee Enrollment</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    html, body { margin: 0; height: 100%; background: #F4F1E9; }
+    html, body { margin: 0; height: 100%; background: #F5F7FA; }
     #enrolly-splash {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 18px;
@@ -43,8 +43,8 @@
       color: #222; transition: opacity .35s ease;
     }
     #enrolly-splash .mark {
-      width: 64px; height: 64px; border-radius: 20px; background: #FF9966 url("icons/Icon-192.png") center / cover;
-      box-shadow: 0 10px 24px rgba(255,153,102,.35);
+      width: 64px; height: 64px; border-radius: 20px; background: #205CA4 url("icons/Icon-192.png") center / cover;
+      box-shadow: 0 10px 24px rgba(32,92,164,.3);
       animation: enrolly-pulse 1.4s ease-in-out infinite;
     }
     #enrolly-splash .name { font-size: 22px; font-weight: 600; letter-spacing: -.2px; }
@@ -52,17 +52,17 @@
     @keyframes enrolly-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(.92); } }
     @media (prefers-reduced-motion: reduce) { #enrolly-splash .mark { animation: none; } }
     @media (prefers-color-scheme: dark) {
-      html, body { background: #171614; }
-      #enrolly-splash { color: #F4F1E9; }
+      html, body { background: #0E1726; }
+      #enrolly-splash { color: #F5F7FA; }
       #enrolly-splash .hint { color: #A8A49B; }
     }
   </style>
 </head>
 <body>
-  <div id="enrolly-splash" aria-label="Loading Enrolly">
+  <div id="enrolly-splash" aria-label="Loading SNOWTEX">
     <div class="mark"></div>
-    <div class="name">Enrolly</div>
-    <div class="hint">Preparing your workspace…</div>
+    <div class="name">SNOWTEX</div>
+    <div class="hint">Employee Enrollment System</div>
   </div>
   <script>
     // Remove the HTML splash once Flutter renders its first frame.

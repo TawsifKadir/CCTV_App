@@ -14,6 +14,7 @@ import '../../../core/widgets/app_cards.dart';
 import '../../../core/widgets/app_feedback.dart';
 import '../../../core/widgets/app_layout.dart';
 import '../../../core/widgets/enrolly_logo.dart';
+import '../../authentication/domain/permissions.dart';
 import '../../authentication/providers/auth_controller.dart';
 import '../../environments/presentation/providers/environment_providers.dart';
 import '../../environments/presentation/widgets/environment_widgets.dart';
@@ -49,7 +50,7 @@ class SettingsScreen extends ConsumerWidget {
           width: 460,
           child: SingleChildScrollView(
             child: Text(
-              'How Enrolly handles employee data:\n\n'
+              'How SNOWTEX Employee Enrollment handles employee data:\n\n'
               '• Employee details and photographs are sent to the server. A copy is kept on this device so '
               'registrations are never lost while offline; you can clear it in Settings.\n\n'
               '• Face templates are created by the server — the app only captures or uploads the photograph. '
@@ -106,7 +107,7 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 CircleAvatar(
                   radius: 32,
-                  backgroundColor: AppColors.peach,
+                  backgroundColor: AppColors.primary,
                   child: Text(Fmt.initials(user.fullName), style: t.titleLarge?.copyWith(color: Colors.white)),
                 ),
                 const SizedBox(width: Space.md),
@@ -118,7 +119,10 @@ class SettingsScreen extends ConsumerWidget {
                       Text(user.email ?? user.username, style: t.bodySmall?.copyWith(color: Colors.white70)),
                       if (user.roles.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(user.roles.join(' · '), style: t.bodySmall?.copyWith(color: Colors.white54)),
+                        Text(
+                          ref.watch(permissionsProvider).roleLabel,
+                          style: t.bodySmall?.copyWith(color: Colors.white70),
+                        ),
                       ],
                     ],
                   ),
@@ -158,21 +162,35 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(top: Space.sm),
             child: SizedBox(
               width: double.infinity,
-              child: SegmentedButton<ThemeMode>(
-                key: const Key('theme-selector'),
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text('System'),
-                    icon: Icon(Icons.brightness_auto_outlined),
-                    tooltip: 'System default',
-                  ),
-                  ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode_outlined)),
-                  ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode_outlined)),
-                ],
-                selected: {s.themeMode},
-                onSelectionChanged: (v) => notifier.update((x) => x.copyWith(themeMode: v.first)),
+              // Icons are dropped on narrow phones so the labels never clip.
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final icons = c.maxWidth >= 320;
+                  return SegmentedButton<ThemeMode>(
+                    key: const Key('theme-selector'),
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(
+                        value: ThemeMode.system,
+                        label: const Text('System'),
+                        icon: icons ? const Icon(Icons.brightness_auto_outlined) : null,
+                        tooltip: 'System default',
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.light,
+                        label: const Text('Light'),
+                        icon: icons ? const Icon(Icons.light_mode_outlined) : null,
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.dark,
+                        label: const Text('Dark'),
+                        icon: icons ? const Icon(Icons.dark_mode_outlined) : null,
+                      ),
+                    ],
+                    selected: {s.themeMode},
+                    onSelectionChanged: (v) => notifier.update((x) => x.copyWith(themeMode: v.first)),
+                  );
+                },
               ),
             ),
           ),

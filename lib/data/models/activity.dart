@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
 enum ActivityType {
-  employeeRegistered(Icons.person_add_alt_1_rounded, AppColors.peach),
+  employeeRegistered(Icons.person_add_alt_1_rounded, AppColors.primary),
   recognitionPending(Icons.hourglass_top_rounded, AppColors.warning),
   registrationFailed(Icons.error_outline_rounded, AppColors.error),
   environmentChanged(Icons.dns_outlined, AppColors.info),
   login(Icons.login_rounded, AppColors.muted),
-  registered(Icons.badge_outlined, AppColors.peach),
+  registered(Icons.badge_outlined, AppColors.primary),
   system(Icons.settings_suggest_outlined, AppColors.muted);
 
   const ActivityType(this.icon, this.color);

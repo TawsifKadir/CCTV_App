@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_buttons.dart';
 import '../../../../core/widgets/app_cards.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_layout.dart';
+import '../../../authentication/domain/permissions.dart';
 import '../../../connectivity/app_features_provider.dart';
 import '../../../environments/presentation/providers/environment_providers.dart';
 import '../../../sync/data/sync_engine.dart';
@@ -77,6 +78,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final features = ref.watch(appFeaturesProvider);
+    final perms = ref.watch(permissionsProvider);
     final env = ref.watch(activeEnvironmentProvider);
     // Prefer the live record (status changes while the page is open).
     final record = ref.watch(employeeRecordProvider(widget.employeeKey)) ?? widget.initial;
@@ -126,7 +128,7 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
             children: [
               SyncStatusBadge(record: record, dense: false),
               if (e.employeeNo != null)
-                AppPill(label: Fmt.employeeNo(e.employeeNo), color: AppColors.peach, showDot: false),
+                AppPill(label: Fmt.employeeNo(e.employeeNo), color: AppColors.primary, showDot: false),
               if (record.isOnServer) SourcePill(employee: e, dense: false),
               if (features.environmentIndicator)
                 AppPill(label: env.environmentName, color: AppColors.info, icon: Icons.dns_outlined),
@@ -155,11 +157,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
             padding: const EdgeInsets.only(bottom: Space.sm),
             child: AppBanner(
               key: const Key('not-uploaded-banner'),
-              type: local.needsReconciliation || local.syncStatus == SyncStatus.failed
+              type: (local.syncStatus == SyncStatus.reconciliationRequired) || local.syncStatus == SyncStatus.failed
                   ? SnackType.warning
                   : SnackType.info,
-              title: local.needsReconciliation ? 'Needs review' : 'Not yet uploaded',
-              message: local.needsReconciliation
+              title: (local.syncStatus == SyncStatus.reconciliationRequired) ? 'Needs review' : 'Not yet uploaded',
+              message: (local.syncStatus == SyncStatus.reconciliationRequired)
                   ? 'The app could not confirm whether the server saved this employee. Before uploading again it '
                         'will search the server for a matching record, so the employee isn\'t registered twice.'
                   : 'This employee is saved on this device and has not reached the server yet. '
@@ -197,7 +199,9 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
           const SizedBox(height: Space.sm),
           AppPrimaryButton(
             key: const Key('sync-one'),
-            label: local.needsReconciliation ? 'Check server & sync' : 'Sync this employee',
+            label: (local.syncStatus == SyncStatus.reconciliationRequired)
+                ? 'Check server & sync'
+                : 'Sync this employee',
             icon: Icons.cloud_upload_outlined,
             height: 46,
             loading: _busy || local.syncStatus == SyncStatus.syncing,
@@ -266,6 +270,38 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
               title: 'Employee profile',
               subtitle: record.isOnServer ? 'On the server' : 'Saved on this device',
               leading: back,
+              // Administrators only (and re-checked in each handler). Phones
+              // use one overflow menu so the title never wraps.
+              actions: [
+                if ((perms.canEditEmployees || perms.canDeleteEmployees) && record.isOnServer && context.isMobile)
+                  PopupMenuButton<String>(
+                    key: const Key('employee-actions'),
+                    tooltip: 'Employee actions',
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: (v) =>
+                        v == 'edit' ? requestEditEmployee(context, perms) : requestDeleteEmployee(context, perms),
+                    itemBuilder: (_) => [
+                      if (perms.canEditEmployees) const PopupMenuItem(value: 'edit', child: Text('Edit employee')),
+                      if (perms.canDeleteEmployees)
+                        const PopupMenuItem(value: 'delete', child: Text('Delete employee')),
+                    ],
+                  ),
+                if (perms.canEditEmployees && record.isOnServer && !context.isMobile)
+                  AppIconButton(
+                    key: const Key('employee-edit'),
+                    icon: Icons.edit_outlined,
+                    tooltip: 'Edit employee',
+                    onPressed: () => requestEditEmployee(context, perms),
+                  ),
+                if (perms.canDeleteEmployees && record.isOnServer && !context.isMobile)
+                  AppIconButton(
+                    key: const Key('employee-delete'),
+                    icon: Icons.delete_outline_rounded,
+                    tooltip: 'Delete employee',
+                    foreground: AppColors.error,
+                    onPressed: () => requestDeleteEmployee(context, perms),
+                  ),
+              ],
             ),
             if (wide)
               Row(

@@ -12,10 +12,10 @@
 require 'xcodeproj'
 
 FLAVORS = {
-  'local' => { name: 'Enrolly Local', suffix: '.local' },
-  'development' => { name: 'Enrolly Dev', suffix: '.dev' },
-  'qa' => { name: 'Enrolly QA', suffix: '.qa' },
-  'production' => { name: 'Enrolly', suffix: '' },
+  'local' => { name: 'SNOWTEX Local', suffix: '.local' },
+  'development' => { name: 'SNOWTEX Dev', suffix: '.dev' },
+  'qa' => { name: 'SNOWTEX QA', suffix: '.qa' },
+  'production' => { name: 'SNOWTEX', suffix: '' },
 }.freeze
 BASES = %w[Debug Release Profile].freeze
 
@@ -70,7 +70,7 @@ FLAVORS.each do |flavor, meta|
 end
 # Plain (flavorless) configurations keep the default name.
 runner.build_configurations.each do |c|
-  c.build_settings['APP_DISPLAY_NAME'] ||= 'Enrolly'
+  c.build_settings['APP_DISPLAY_NAME'] ||= 'SNOWTEX'
 end
 project.save
 

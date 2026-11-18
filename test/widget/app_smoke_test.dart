@@ -6,7 +6,6 @@ import 'package:cctv_app/core/routing/app_router.dart';
 import 'package:cctv_app/core/routing/app_shell.dart';
 import 'package:cctv_app/core/routing/routes.dart';
 import 'package:cctv_app/core/services/providers.dart';
-import 'package:cctv_app/core/theme/app_theme.dart';
 import 'package:cctv_app/data/local/local_database.dart';
 import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
 import 'package:cctv_app/features/employees/data/models/employee.dart';
@@ -31,7 +30,6 @@ void main() {
   late LocalDatabase db;
 
   setUpAll(() async {
-    AppTheme.useGoogleFonts = false;
     dir = await Directory.systemTemp.createTemp('enrolly_widget_');
     db = await LocalDatabase.open(path: dir.path);
     final c = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
@@ -144,11 +142,11 @@ void main() {
     await pumpApp(tester, const Size(1440, 900));
     for (final label in [
       'Dashboard',
-      'Employee Management',
+      'Employees',
       'Register Employee',
       'Synchronization',
       'Settings',
-      'Environment Configuration',
+      'Environment',
       'Diagnostics',
       'Logout',
     ]) {
@@ -176,22 +174,20 @@ void main() {
   testWidgets('dashboard shows real totals from the list endpoint', (tester) async {
     final (_, backend) = await pumpApp(tester, const Size(1440, 900));
     expect(find.text('On the server'), findsOneWidget);
-    expect(find.byKey(const Key('hero-total')), findsOneWidget);
-    expect(find.text('30'), findsWidgets);
-    final sources = backend.listRequests.map((r) => r.uri.queryParameters['source']).toSet();
-    expect(sources, containsAll(<String?>[null, 'photo', 'capture']));
+    expect(find.descendant(of: find.byKey(const Key('stat-total')), matching: find.text('30')), findsOneWidget);
+    expect(backend.listRequests, isNotEmpty);
   });
 
   testWidgets('dashboard shows unavailable figures as "—", not 0, when the backend is down', (tester) async {
     final backend = FakeBackend((_) => throw const SocketException('Connection refused'));
     await pumpApp(tester, const Size(1440, 900), backend: backend);
-    expect(find.byKey(const Key('hero-total')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('stat-total')), matching: find.text('—')), findsOneWidget);
+    expect(find.text('Unavailable offline'), findsOneWidget);
     expect(
-      find.descendant(of: find.byKey(const Key('hero-total')), matching: find.text('—'), matchRoot: true),
+      find.text('Unable to reach the server. You can continue working with locally stored records.'),
       findsOneWidget,
+      reason: 'Wi-Fi is up but the server is not',
     );
-    expect(find.text('Unavailable'), findsWidgets);
-    expect(find.text('Server unavailable'), findsWidgets, reason: 'Wi-Fi is up but the server is not');
   });
 
   group('Employee list', () {
@@ -391,8 +387,7 @@ void main() {
     container.read(routerProvider).go(Routes.environment);
     await tester.pumpAndSettle();
     expect(find.text('http://localhost:8080'), findsWidgets);
-    expect(find.text('Not configured'), findsNWidgets(2));
-    expect(find.text('http://27.147.174.107:8085'), findsOneWidget, reason: 'development is selectable');
+    expect(find.text('Not configured'), findsNWidgets(3));
     final before = backend.requests.length;
     await tester.tap(find.byKey(const Key('test-connection')));
     await tester.pumpAndSettle();

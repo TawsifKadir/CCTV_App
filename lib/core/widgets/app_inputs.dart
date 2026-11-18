@@ -106,7 +106,7 @@ class _AppTextFieldState extends State<AppTextField> {
           decoration: BoxDecoration(
             borderRadius: Radii.mdAll,
             boxShadow: focused
-                ? [BoxShadow(color: AppColors.peach.withValues(alpha: 0.16), blurRadius: 0, spreadRadius: 4)]
+                ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.16), blurRadius: 0, spreadRadius: 4)]
                 : const [],
           ),
           child: TextFormField(
@@ -133,7 +133,7 @@ class _AppTextFieldState extends State<AppTextField> {
               hintText: widget.hint,
               prefixIcon: widget.icon == null
                   ? null
-                  : Icon(widget.icon, size: 20, color: focused ? AppColors.peach : null),
+                  : Icon(widget.icon, size: 20, color: focused ? AppColors.primary : null),
               suffixIcon: widget.suffix,
             ),
           ),
@@ -179,7 +179,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       fieldKey: widget.fieldKey,
       label: widget.label,
       controller: widget.controller,
-      hint: widget.hint ?? '••••••••',
+      hint: widget.hint ?? 'Enter your password',
       icon: Icons.lock_outline_rounded,
       obscure: _hidden,
       validator: widget.validator,
@@ -396,7 +396,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: pill,
-            borderSide: const BorderSide(color: AppColors.peach, width: 1.6),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: 14),
         ),

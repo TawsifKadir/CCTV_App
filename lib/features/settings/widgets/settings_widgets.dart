@@ -64,7 +64,7 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final c = color ?? AppColors.peach;
+    final c = color ?? context.palette.accent;
     return InkWell(
       onTap: onTap,
       borderRadius: Radii.mdAll,

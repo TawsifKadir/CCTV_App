@@ -9,6 +9,7 @@ import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_feedback.dart';
 import '../../../core/widgets/app_inputs.dart';
 import '../../connectivity/app_features_provider.dart';
+import '../../environments/presentation/providers/environment_providers.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/dev_login_tools.dart';
@@ -72,7 +73,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return AuthLayout(
       title: 'Welcome back',
       subtitle: 'Sign in to continue managing enrollments.',
-      footer: devTools ? const DevEnvironmentPicker() : null,
+      footer: devTools
+          ? const DevEnvironmentPicker()
+          : (ref.watch(activeEnvironmentProvider).isSecure ? null : const _InsecureConnectionNote()),
       child: AutofillGroup(
         child: Form(
           key: _formKey,
@@ -135,4 +138,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+/// Shown when the server is reached over plain HTTP (production must move to
+/// HTTPS before handling real employee data).
+class _InsecureConnectionNote extends StatelessWidget {
+  const _InsecureConnectionNote();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: Space.md),
+    child: AppBanner(
+      key: const Key('insecure-connection'),
+      type: SnackType.warning,
+      message: 'This connection to the server is not encrypted (HTTP). Ask your administrator to enable HTTPS.',
+    ),
+  );
 }

@@ -55,7 +55,7 @@ class AppPrimaryButton extends StatelessWidget {
     this.icon,
     this.loading = false,
     this.expand = true,
-    this.color = AppColors.peach,
+    this.color = AppColors.primary,
     this.foreground = AppColors.white,
     this.height = 54,
   });
@@ -88,10 +88,12 @@ class AppPrimaryButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: Space.lg),
           decoration: BoxDecoration(
             color: onPressed == null ? color.withValues(alpha: 0.45) : color,
+            // Brand buttons get a subtle sheen; custom colours stay flat.
+            gradient: onPressed != null && color == AppColors.primary ? AppColors.actionGradient : null,
             borderRadius: radius,
             boxShadow: onPressed == null
                 ? null
-                : [BoxShadow(color: color.withValues(alpha: 0.32), blurRadius: 18, offset: const Offset(0, 8))],
+                : [BoxShadow(color: color.withValues(alpha: 0.26), blurRadius: 12, offset: const Offset(0, 5))],
           ),
           child: Row(
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -258,7 +260,7 @@ class AppIconButton extends StatelessWidget {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(color: AppColors.peach, shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: context.palette.accent, shape: BoxShape.circle),
                     ),
                   ),
               ],
@@ -283,7 +285,7 @@ class AppLinkButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: color ?? AppColors.peach,
+        foregroundColor: color ?? context.palette.accent,
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         minimumSize: const Size(0, 36),
         shape: RoundedRectangleBorder(borderRadius: Radii.smAll),

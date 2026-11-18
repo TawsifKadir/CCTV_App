@@ -32,7 +32,44 @@ class AuthController extends Notifier<AuthSession?> {
       }
     });
     final initial = ref.watch(initialSessionProvider);
-    return initial != null && initial.environmentId == env.environmentId && !initial.isExpired() ? initial : null;
+    final restored = initial != null && initial.environmentId == env.environmentId && !initial.isExpired()
+        ? initial
+        : null;
+    if (restored != null && !restored.isDemo) Future.microtask(checkAuthenticationStatus);
+    return restored;
+  }
+
+  /// Confirms a restored session with `GET /api/auth/session`. A 401 signs
+  /// out (via the client's unauthorized hook); if the server can't be
+  /// reached the session is kept so the app stays usable offline.
+  Future<void> checkAuthenticationStatus() async {
+    final s = state;
+    if (s == null || s.isDemo) return;
+    try {
+      final info = await ref.read(authApiServiceProvider).session();
+      final current = state;
+      if (current == null || current.isDemo) return;
+      final role = info['role'];
+      state = AuthSession(
+        operator: Operator(
+          username: (info['username'] as String?) ?? current.operator.username,
+          id: current.operator.id,
+          displayName: current.operator.displayName,
+          email: current.operator.email,
+          roles: role is String && role.isNotEmpty ? [role] : current.operator.roles,
+        ),
+        environmentId: current.environmentId,
+        createdAt: current.createdAt,
+        accessToken: current.accessToken,
+        tokenType: current.tokenType,
+        refreshToken: current.refreshToken,
+        sessionId: current.sessionId,
+        cookies: current.cookies,
+        expiresAt: DateTime.tryParse(info['expiresAt'] as String? ?? '')?.toLocal() ?? current.expiresAt,
+      );
+    } catch (_) {
+      // Offline or server error: keep the local session.
+    }
   }
 
   Future<void> login(String username, String password, {required bool remember}) async {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/activity/presentation/screens/activity_screen.dart';
+import '../../features/authentication/domain/permissions.dart';
 import '../../features/authentication/providers/auth_controller.dart';
 import '../../features/authentication/screens/login_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
@@ -62,6 +63,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onAuthPage = loc == Routes.login;
       if (!signedIn.value && !onAuthPage) return Routes.login;
       if (signedIn.value && onAuthPage) return Routes.home;
+      // Role check at routing level (the backend still enforces access).
+      if (Routes.requiresAdmin(loc) && !ref.read(permissionsProvider).isAdmin) return Routes.home;
       if (loc == '/') return Routes.home;
       return null;
     },

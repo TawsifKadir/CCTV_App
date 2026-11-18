@@ -33,7 +33,7 @@ class AppNotifier {
       SnackType.success => (Icons.check_circle_rounded, AppColors.success),
       SnackType.error => (Icons.error_rounded, AppColors.error),
       SnackType.warning => (Icons.warning_amber_rounded, AppColors.warning),
-      SnackType.info => (Icons.info_rounded, AppColors.peachSoft),
+      SnackType.info => (Icons.info_rounded, AppColors.primarySoft),
     };
     final width = MediaQuery.maybeSizeOf(messenger.context)?.width ?? 0;
     messenger
@@ -44,7 +44,7 @@ class AppNotifier {
           duration: Duration(seconds: actionLabel == null ? 4 : 7),
           action: actionLabel == null
               ? null
-              : SnackBarAction(label: actionLabel, textColor: AppColors.peach, onPressed: onAction ?? () {}),
+              : SnackBarAction(label: actionLabel, textColor: AppColors.primary, onPressed: onAction ?? () {}),
           content: Row(
             children: [
               Icon(icon, color: color, size: 22),

@@ -84,7 +84,7 @@ class InitialsAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final hue = name.codeUnits.fold<int>(0, (a, b) => a + b) % 4;
-    final accent = const [AppColors.peach, AppColors.success, AppColors.info, AppColors.warning][hue];
+    final accent = const [AppColors.primary, AppColors.success, AppColors.info, AppColors.warning][hue];
     return Container(
       width: size,
       height: size,

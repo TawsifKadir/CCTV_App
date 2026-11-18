@@ -43,7 +43,20 @@ class UnauthorizedInterceptor extends Interceptor {
 class CsrfInterceptor extends Interceptor {
   CsrfInterceptor(this._dio);
   final Dio _dio;
+
+  /// Value of the `XSRF-TOKEN` cookie (sent back as a cookie on native).
   String? token;
+
+  /// Header name and value from `GET /api/auth/csrf`, when available. The
+  /// header value may differ from the cookie (Spring masks it per request).
+  String headerName = 'X-XSRF-TOKEN';
+  String? headerToken;
+
+  void useEndpointToken(String name, String value) {
+    headerName = name;
+    headerToken = value;
+  }
+
   static const _retried = '_csrf_retried';
 
   bool _applies(RequestOptions o) =>
@@ -56,15 +69,19 @@ class CsrfInterceptor extends Interceptor {
       final pair = raw.split(';').first.trim();
       if (pair.startsWith('XSRF-TOKEN=')) {
         final v = pair.substring('XSRF-TOKEN='.length);
-        token = v.isEmpty ? null : v;
+        final next = v.isEmpty ? null : v;
+        if (next != token) headerToken = null; // a rotated cookie invalidates the old header token
+        token = next;
       }
     }
   }
 
   void _attach(RequestOptions o) {
+    final header = headerToken ?? token;
+    if (header == null || !_applies(o)) return;
+    o.headers[headerName] = header;
     final t = token;
-    if (t == null || !_applies(o)) return;
-    o.headers['X-XSRF-TOKEN'] = t;
+    if (t == null) return;
     final existing = o.headers['Cookie']?.toString();
     o.headers['Cookie'] = [if (existing != null && existing.isNotEmpty) existing, 'XSRF-TOKEN=$t'].join('; ');
   }

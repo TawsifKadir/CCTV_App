@@ -11,6 +11,8 @@ class EnvironmentConfig {
     this.isProduction = false,
     this.allowDebugFeatures = false,
     this.notes,
+    this.websiteUrl,
+    this.insecureHttpAcknowledged = false,
   });
 
   /// Stable identifier, e.g. `local`, `qa`. Matches `APP_ENV` and the
@@ -37,6 +39,16 @@ class EnvironmentConfig {
   /// Optional explanation shown in Settings (e.g. how localhost is mapped).
   final String? notes;
 
+  /// The web front end for this environment (may differ from the API).
+  final String? websiteUrl;
+
+  /// Production over plain HTTP was explicitly allowed for this build
+  /// (`ALLOW_INSECURE_PRODUCTION=true`). The app shows a warning.
+  final bool insecureHttpAcknowledged;
+
+  /// `false` when traffic (credentials, photos) is unencrypted.
+  bool get isSecure => (baseUrl ?? '').trim().toLowerCase().startsWith('https://');
+
   bool get isConfigured => baseUrl != null && configurationError == null;
 
   /// `null` when the URL is usable; otherwise a message explaining why not.
@@ -52,8 +64,10 @@ class EnvironmentConfig {
     if (uri.scheme != 'http' && uri.scheme != 'https') {
       return 'The backend URL for "$environmentName" must use http or https: $url';
     }
-    if (isProduction && uri.scheme != 'https') {
-      return 'The production backend must use HTTPS: $url';
+    if (isProduction && uri.scheme != 'https' && !insecureHttpAcknowledged) {
+      return 'The production backend must use HTTPS: $url. Passwords, tokens and employee photographs '
+          'would travel unencrypted. Enable TLS on the server (e.g. a reverse proxy), or — only for '
+          'non-sensitive testing — build with --dart-define=ALLOW_INSECURE_PRODUCTION=true';
     }
     if (uri.hasQuery || uri.hasFragment) {
       return 'The backend URL for "$environmentName" must not contain a query or fragment: $url';
@@ -102,7 +116,7 @@ class EnvironmentConfig {
     return s;
   }
 
-  EnvironmentConfig copyWith({String? baseUrl, String? notes}) => EnvironmentConfig(
+  EnvironmentConfig copyWith({String? baseUrl, String? notes, bool? insecureHttpAcknowledged}) => EnvironmentConfig(
     environmentId: environmentId,
     environmentName: environmentName,
     baseUrl: baseUrl ?? this.baseUrl,
@@ -110,6 +124,8 @@ class EnvironmentConfig {
     isProduction: isProduction,
     allowDebugFeatures: allowDebugFeatures,
     notes: notes ?? this.notes,
+    websiteUrl: websiteUrl,
+    insecureHttpAcknowledged: insecureHttpAcknowledged ?? this.insecureHttpAcknowledged,
   );
 
   @override

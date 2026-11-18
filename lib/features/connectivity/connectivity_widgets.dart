@@ -26,6 +26,8 @@ class ConnectivityPill extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(networkStatusProvider);
+    // Only problems are shown; a working connection needs no badge.
+    if (status == NetworkStatus.online || status == NetworkStatus.checking) return const SizedBox.shrink();
     final (color, icon) = networkStatusStyle(status);
     final t = Theme.of(context).textTheme;
     final fg = onDark ? Colors.white : context.onTint(color);

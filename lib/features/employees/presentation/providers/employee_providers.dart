@@ -114,7 +114,9 @@ class LocalCounts {
           sy++;
         case SyncStatus.failed:
           f++;
-          if (e.needsReconciliation) r++;
+        case SyncStatus.reconciliationRequired:
+          f++;
+          r++;
         case SyncStatus.synced:
           s++;
       }

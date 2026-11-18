@@ -599,7 +599,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4D2948A2954D2D639401B58B /* Release-development.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Dev";
+				APP_DISPLAY_NAME = "SNOWTEX Dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -638,7 +638,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -690,7 +690,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -781,7 +781,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 25F00F7888F510433B2F45DF /* Profile-production.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -933,7 +933,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 065DDE71A936F68775B605DB /* Profile-local.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Local";
+				APP_DISPLAY_NAME = "SNOWTEX Local";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1122,7 +1122,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 13BDF0ACDB1420B694B7E73C /* Release-production.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1145,7 +1145,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1340,7 +1340,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1364,7 +1364,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1387,7 +1387,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DD6ED702A2EA70E84283E704 /* Release-local.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Local";
+				APP_DISPLAY_NAME = "SNOWTEX Local";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1464,7 +1464,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1548,7 +1548,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8FC865C32297501426E6FAF5 /* Debug-development.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Dev";
+				APP_DISPLAY_NAME = "SNOWTEX Dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1572,7 +1572,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 27B7EF2E4E80489B6965957D /* Release-qa.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly QA";
+				APP_DISPLAY_NAME = "SNOWTEX QA";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1595,7 +1595,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1647,7 +1647,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F36651664E2DB5095FDD5F29 /* Debug-qa.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly QA";
+				APP_DISPLAY_NAME = "SNOWTEX QA";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1671,7 +1671,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6274255D5DC8C2E82631075C /* Debug-production.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = Enrolly;
+				APP_DISPLAY_NAME = SNOWTEX;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1695,7 +1695,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = B5BE60C5EA60C289E87563E3 /* Profile-development.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Dev";
+				APP_DISPLAY_NAME = "SNOWTEX Dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1807,7 +1807,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -1859,7 +1859,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A413C77B6FFAAAB125D226C4 /* Debug-local.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly Local";
+				APP_DISPLAY_NAME = "SNOWTEX Local";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -1883,7 +1883,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 33A8BA09ED3ADA9CE41AEF4F /* Profile-qa.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Enrolly QA";
+				APP_DISPLAY_NAME = "SNOWTEX QA";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";

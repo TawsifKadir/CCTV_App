@@ -16,7 +16,7 @@ import '../../../../core/widgets/app_cards.dart';
 import '../../../../core/widgets/app_feedback.dart';
 import '../../../../core/widgets/app_inputs.dart';
 import '../../../../core/widgets/app_layout.dart';
-import '../../../connectivity/app_features_provider.dart';
+import '../../../authentication/domain/permissions.dart';
 import '../../../environments/presentation/providers/environment_providers.dart';
 import '../../../sync/presentation/sync_widgets.dart';
 import '../../data/models/employee_record.dart';
@@ -86,7 +86,6 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       _search.clear();
     });
 
-    final features = ref.watch(appFeaturesProvider);
     final query = ref.watch(employeeQueryProvider);
     final listing = ref.watch(employeeListingProvider);
     final linked = ref.watch(linkedLocalByServerIdProvider);
@@ -95,18 +94,17 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
     final server = listing.server;
     final serverData = server.valueOrNull;
     final loading = server.isLoading;
-    final env = ref.watch(activeEnvironmentProvider);
     final desktop = context.isDesktop;
     final mode = desktop ? _mode : _ViewMode.grid;
     final pad = context.pagePadding;
 
+    // The environment is already shown in the status bar (admin builds).
     final subtitleParts = [
       if (serverTotal != null) '${Fmt.number(serverTotal)} on server',
       if (counts.awaiting > 0) '${counts.awaiting} waiting to sync',
-      if (features.environmentIndicator) env.environmentName,
     ];
     final header = AppPageHeader(
-      title: desktop ? 'Employee Management' : 'Employees',
+      title: desktop ? 'Employee Directory' : 'Employees',
       subtitle: subtitleParts.isEmpty ? 'Employee records' : subtitleParts.join(' · '),
       actions: [
         if (desktop)
@@ -126,7 +124,6 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
           onPressed: loading ? null : _refresh,
         ),
         if (!context.isMobile) ...[
-          if (counts.awaiting > 0) const SyncNowButton(),
           AppPrimaryButton(
             label: 'Register employee',
             icon: Icons.add_rounded,
@@ -138,7 +135,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
           AppIconButton(
             icon: Icons.sync_rounded,
             tooltip: 'Sync now',
-            background: AppColors.peach,
+            background: AppColors.primary,
             foreground: Colors.white,
             onPressed: () => runSyncNow(context, ref),
           ),
@@ -148,7 +145,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
     final searchBar = AppSearchBar(
       fieldKey: const Key('employee-search'),
       controller: _search,
-      hint: 'Search number, name, designation or template ID',
+      hint: context.isMobile ? 'Search employees' : 'Search number, name, designation or template ID',
       onChanged: _onSearchChanged,
       onSubmitted: _applySearch,
     );
@@ -271,7 +268,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          color: AppColors.peach,
+          color: AppColors.primary,
           onRefresh: _refresh,
           child: Align(
             alignment: Alignment.topCenter,
@@ -371,7 +368,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
             padding: const EdgeInsets.symmetric(vertical: Space.xs),
             child: Column(
               children: [
-                const EmployeeTableHeader(),
+                EmployeeTableHeader(showActions: ref.watch(permissionsProvider).isAdmin),
                 Divider(color: context.palette.border, height: 1),
                 for (var i = 0; i < items.length; i++)
                   animatedListItem(
@@ -390,6 +387,19 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
         builder: (context, c) {
           final w = c.crossAxisExtent;
           final cols = w >= 1100 ? 3 : (w >= 640 ? 2 : 1);
+          // Phones: a lazy list whose cards size to their content (no
+          // fixed heights, no empty space).
+          if (cols == 1) {
+            return SliverList.separated(
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(height: Space.sm),
+              itemBuilder: (context, i) => animatedListItem(
+                context,
+                i,
+                EmployeeCard(key: ValueKey('$keyPrefix-${items[i].key}'), record: items[i]),
+              ),
+            );
+          }
           return SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: cols,

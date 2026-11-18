@@ -4,9 +4,10 @@
 class AppConstants {
   AppConstants._();
 
-  static const appName = 'Enrolly';
-  static const tagline = 'Employee Enrollment & Identity Management';
-  static const version = '2.0.0';
+  static const appName = 'SNOWTEX';
+  static const productName = 'Employee Enrollment';
+  static const tagline = 'Employee Enrollment System';
+  static const version = '3.0.0';
 
   /// Brand image (generated from assets/branding/source_photo.jpg).
   static const logoAsset = 'assets/branding/app_logo.png';

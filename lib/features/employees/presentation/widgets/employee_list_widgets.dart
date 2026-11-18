@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/routes.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/app_buttons.dart';
 import '../../../../core/widgets/app_cards.dart';
 import '../../data/models/employee.dart';
 import '../../data/models/employee_page.dart';
+import '../../../authentication/domain/permissions.dart';
 import '../../data/models/employee_record.dart';
 import '../../../sync/presentation/sync_widgets.dart';
 import 'employee_avatar.dart';
@@ -18,19 +20,29 @@ void openEmployee(BuildContext context, EmployeeRecord r) => context.push(Routes
 
 /// Tag for the enrollment source.
 class SourcePill extends StatelessWidget {
-  const SourcePill({super.key, required this.employee, this.dense = true});
+  const SourcePill({super.key, required this.employee, this.dense = true, this.short = false});
   final Employee employee;
   final bool dense;
+
+  /// "Photo" / "Capture" for narrow table columns.
+  final bool short;
 
   @override
   Widget build(BuildContext context) {
     final s = employee.enrollmentSource;
     final (Color color, IconData icon) = switch (s) {
       EnrollmentSource.capture => (AppColors.info, Icons.videocam_outlined),
-      EnrollmentSource.photo => (AppColors.peach, Icons.photo_outlined),
+      EnrollmentSource.photo => (AppColors.primary, Icons.photo_outlined),
       null => (AppColors.muted, Icons.help_outline_rounded),
     };
-    return AppPill(label: employee.sourceLabel, color: color, icon: icon, dense: dense);
+    final label = !short
+        ? employee.sourceLabel
+        : switch (s) {
+            EnrollmentSource.capture => 'Capture',
+            EnrollmentSource.photo => 'Photo',
+            null => employee.sourceLabel,
+          };
+    return AppPill(label: label, color: color, icon: icon, dense: dense);
   }
 }
 
@@ -61,7 +73,8 @@ class EmployeeCard extends StatelessWidget {
                     Expanded(
                       child: Text(e.name, style: t.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                    Text(Fmt.employeeNo(e.employeeNo), style: t.labelMedium?.copyWith(color: AppColors.peach)),
+                    if (e.employeeNo != null)
+                      Text(Fmt.employeeNo(e.employeeNo), style: t.labelMedium?.copyWith(color: context.palette.accent)),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -113,42 +126,59 @@ class _Meta extends StatelessWidget {
 
 /// Desktop table header.
 class EmployeeTableHeader extends StatelessWidget {
-  const EmployeeTableHeader({super.key});
+  const EmployeeTableHeader({super.key, this.showActions = false});
+
+  /// Admin-only actions column.
+  final bool showActions;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     Widget head(String s, int flex) => Expanded(
       flex: flex,
-      child: Text(s.toUpperCase(), style: t.labelSmall?.copyWith(letterSpacing: 0.6)),
+      child: Text(
+        s.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: t.labelSmall?.copyWith(letterSpacing: 0.6),
+      ),
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.sm + 2),
       child: Row(
         children: [
-          head('Employee', 5),
+          const SizedBox(width: _photoCol),
           head('Emp. No', 2),
+          head('Name', 4),
           head('Designation', 4),
           head('Date of birth', 3),
           head('Enrolled', 3),
+          head('Source', 3),
           head('Status', 3),
-          const SizedBox(width: 32),
+          SizedBox(
+            width: showActions ? _actionsCol : _chevronCol,
+            child: showActions ? Text('ACTIONS', maxLines: 1, style: t.labelSmall?.copyWith(letterSpacing: 0.6)) : null,
+          ),
         ],
       ),
     );
   }
 }
 
+const double _photoCol = 56;
+const double _actionsCol = 88;
+const double _chevronCol = 32;
+
 /// One row of the desktop table. Hover is a cheap colour change only.
-class EmployeeTableRow extends StatefulWidget {
+class EmployeeTableRow extends ConsumerStatefulWidget {
   const EmployeeTableRow({super.key, required this.record});
   final EmployeeRecord record;
 
   @override
-  State<EmployeeTableRow> createState() => _EmployeeTableRowState();
+  ConsumerState<EmployeeTableRow> createState() => _EmployeeTableRowState();
 }
 
-class _EmployeeTableRowState extends State<EmployeeTableRow> {
+class _EmployeeTableRowState extends ConsumerState<EmployeeTableRow> {
   bool _hover = false;
 
   @override
@@ -157,6 +187,16 @@ class _EmployeeTableRowState extends State<EmployeeTableRow> {
     final e = rec.view;
     final t = Theme.of(context).textTheme;
     final p = context.palette;
+    final perms = ref.watch(permissionsProvider);
+    final showActions = perms.canEditEmployees || perms.canDeleteEmployees;
+    Widget cell(int flex, Widget child) => Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.only(right: Space.sm),
+        child: child,
+      ),
+    );
+    Text one(String s, TextStyle? style) => Text(s, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -173,49 +213,63 @@ class _EmployeeTableRowState extends State<EmployeeTableRow> {
               padding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.sm),
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 5,
-                    child: Row(
-                      children: [
-                        EmployeeAvatar(record: rec, size: 42, heroTag: 'emp-${rec.key}'),
-                        const SizedBox(width: Space.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(e.name, style: t.titleSmall, overflow: TextOverflow.ellipsis),
-                              Text(
-                                e.id != null ? 'ID ${e.id}' : 'Not yet on server',
-                                style: t.bodySmall,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(flex: 2, child: Text(Fmt.employeeNo(e.employeeNo), style: t.labelLarge)),
-                  Expanded(
-                    flex: 4,
-                    child: Text(e.designation ?? '—', style: t.bodyMedium, overflow: TextOverflow.ellipsis),
-                  ),
-                  Expanded(flex: 3, child: Text(Fmt.date(e.dateOfBirth), style: t.bodyMedium)),
-                  Expanded(
-                    flex: 3,
-                    child: Text(Fmt.dateTime(e.enrolledAt), style: t.bodyMedium, overflow: TextOverflow.ellipsis),
-                  ),
-                  Expanded(
-                    flex: 3,
+                  SizedBox(
+                    width: _photoCol,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: SyncStatusBadge(record: rec),
+                      child: EmployeeAvatar(record: rec, size: 42, heroTag: 'emp-${rec.key}'),
                     ),
                   ),
-                  SizedBox(
-                    width: 32,
-                    child: Icon(Icons.chevron_right_rounded, color: _hover ? AppColors.peach : p.textMuted),
+                  cell(2, one(Fmt.employeeNo(e.employeeNo), t.labelLarge)),
+                  cell(4, one(e.name, t.titleSmall)),
+                  cell(4, one(e.designation ?? '—', t.bodyMedium)),
+                  cell(3, one(Fmt.date(e.dateOfBirth), t.bodyMedium)),
+                  cell(3, one(Fmt.date(e.enrolledAt), t.bodyMedium)),
+                  cell(
+                    3,
+                    rec.isOnServer
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: SourcePill(employee: e, short: true),
+                          )
+                        : one('Pending', t.bodySmall),
                   ),
+                  cell(
+                    3,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SyncStatusBadge(record: rec, short: true),
+                    ),
+                  ),
+                  if (showActions)
+                    SizedBox(
+                      width: _actionsCol,
+                      child: rec.isOnServer
+                          ? Row(
+                              children: [
+                                IconButton(
+                                  key: Key('row-edit-${rec.key}'),
+                                  tooltip: 'Edit',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
+                                  onPressed: () => requestEditEmployee(context, perms),
+                                ),
+                                IconButton(
+                                  key: Key('row-delete-${rec.key}'),
+                                  tooltip: 'Delete',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                                  onPressed: () => requestDeleteEmployee(context, perms),
+                                ),
+                              ],
+                            )
+                          : null,
+                    )
+                  else
+                    SizedBox(
+                      width: _chevronCol,
+                      child: Icon(Icons.chevron_right_rounded, color: _hover ? AppColors.primary : p.textMuted),
+                    ),
                 ],
               ),
             ),
@@ -288,7 +342,7 @@ class _FilterChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: selected ? AppColors.peach : p.textMuted),
+                Icon(icon, size: 16, color: selected ? AppColors.primary : p.textMuted),
                 const SizedBox(width: 6),
                 Text(
                   label,
@@ -407,7 +461,7 @@ class _PageNumber extends StatelessWidget {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
     return Material(
-      color: selected ? AppColors.peach : Colors.transparent,
+      color: selected ? AppColors.primary : Colors.transparent,
       borderRadius: Radii.smAll,
       child: InkWell(
         borderRadius: Radii.smAll,
@@ -448,7 +502,7 @@ class EmployeeListTile extends StatelessWidget {
                 children: [
                   Text(e.name, style: t.titleSmall, overflow: TextOverflow.ellipsis),
                   Text(
-                    '${Fmt.employeeNo(e.employeeNo)} · ${e.designation ?? '—'}',
+                    [if (e.employeeNo != null) Fmt.employeeNo(e.employeeNo), e.designation ?? '—'].join(' · '),
                     style: t.bodySmall,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 /// launcher icon) in a rounded tile. Falls back to a vector mark if the
 /// asset cannot be loaded. Change [AppConstants.logoAsset] to rebrand.
 class EnrollyLogoMark extends StatelessWidget {
-  const EnrollyLogoMark({super.key, this.size = 44, this.background = AppColors.peach});
+  const EnrollyLogoMark({super.key, this.size = 44, this.background = AppColors.primary});
 
   final double size;
   final Color background;

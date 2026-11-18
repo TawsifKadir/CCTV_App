@@ -14,7 +14,7 @@ class QuickActionTile extends StatelessWidget {
     required this.label,
     required this.caption,
     required this.onTap,
-    this.accent = AppColors.peach,
+    this.accent = AppColors.primary,
     this.filled = false,
   });
 
@@ -31,7 +31,7 @@ class QuickActionTile extends StatelessWidget {
     final fg = filled ? Colors.white : context.palette.text;
     return AppCard(
       onTap: onTap,
-      color: filled ? AppColors.peach : null,
+      color: filled ? AppColors.primary : null,
       padding: const EdgeInsets.all(Space.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

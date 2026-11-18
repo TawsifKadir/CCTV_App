@@ -38,7 +38,7 @@ class DemoLoginCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.science_outlined, color: AppColors.peach, size: 20),
+              const Icon(Icons.science_outlined, color: AppColors.primary, size: 20),
               const SizedBox(width: Space.sm),
               Expanded(
                 child: Text.rich(

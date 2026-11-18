@@ -5,8 +5,9 @@ import 'auth_session.dart';
 
 /// `POST /api/auth/login` on the active environment, via the shared client.
 ///
-/// `POST /api/auth/logout` ends the server session. There is no
-/// session-check or refresh endpoint; expiry is detected by a 401.
+/// Confirmed on the server (2026-11-18): `GET /api/auth/csrf`,
+/// `POST /api/auth/login`, `GET /api/auth/session`, `POST /api/auth/logout`.
+/// There is no refresh endpoint; expiry is detected by `session` or a 401.
 class AuthApiService {
   AuthApiService(this._client);
   final ApiClient _client;
@@ -21,7 +22,27 @@ class AuthApiService {
     }
   }
 
+  /// Fetches the CSRF token the login POST needs (like the website does).
+  /// Best effort: if it fails, the client retries the login once after the
+  /// server's 403 issues a token.
+  Future<void> _prepareCsrf() async {
+    try {
+      final res = await _client.get(ApiEndpoints.authCsrf);
+      final d = res.data;
+      if (d is Map && d['headerName'] is String && d['token'] is String) {
+        _client.csrf.useEndpointToken(d['headerName'] as String, d['token'] as String);
+      }
+    } catch (_) {}
+  }
+
+  /// `GET /api/auth/session` for the current credentials.
+  Future<Map<String, dynamic>> session() async {
+    final res = await _client.get(ApiEndpoints.authSession);
+    return res.data is Map ? Map<String, dynamic>.from(res.data as Map) : const {};
+  }
+
   Future<AuthSession> login(String username, String password) async {
+    await _prepareCsrf();
     try {
       final res = await _client.postJson(ApiEndpoints.authLogin, {'username': username, 'password': password});
       return AuthResponseParser.parse(

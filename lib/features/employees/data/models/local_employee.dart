@@ -19,7 +19,12 @@ enum SyncStatus {
   synced('SYNCED', 'On server', Icons.cloud_done_outlined, AppColors.success),
 
   /// The last attempt failed; the record is still safe on this device.
-  failed('FAILED', 'Sync failed', Icons.error_outline_rounded, AppColors.error);
+  failed('FAILED', 'Sync failed', Icons.error_outline_rounded, AppColors.error),
+
+  /// The outcome of an upload is unknown (the server may have saved it).
+  /// The record is never re-uploaded blindly: the server is searched for a
+  /// matching employee first.
+  reconciliationRequired('RECONCILIATION_REQUIRED', 'Needs review', Icons.help_outline_rounded, AppColors.warning);
 
   const SyncStatus(this.code, this.label, this.icon, this.color);
   final String code;
@@ -118,8 +123,7 @@ class LocalEmployee {
 
   bool get isUnsynced => syncStatus != SyncStatus.synced;
 
-  /// Label shown in the UI (accounts for the "needs review" sub-state).
-  String get statusLabel => needsReconciliation && syncStatus == SyncStatus.failed ? 'Needs review' : syncStatus.label;
+  String get statusLabel => syncStatus.label;
 
   /// Display model shared with server records.
   Employee toEmployee() => Employee(
@@ -230,7 +234,10 @@ class LocalEmployee {
     serverWarning: parseString(j['serverWarning']),
     createdAt: parseDate(j['createdAt']) ?? DateTime.now(),
     updatedAt: parseDate(j['updatedAt']) ?? DateTime.now(),
-    syncStatus: SyncStatus.fromCode(j['syncStatus'] as String?),
+    syncStatus: (j['needsReconciliation'] == true && j['syncStatus'] == 'FAILED')
+        ? SyncStatus
+              .reconciliationRequired // migrate records from before this state existed
+        : SyncStatus.fromCode(j['syncStatus'] as String?),
     lastSyncAttempt: parseDate(j['lastSyncAttempt']),
     lastSuccessfulSync: parseDate(j['lastSuccessfulSync']),
     syncError: parseString(j['syncError']),

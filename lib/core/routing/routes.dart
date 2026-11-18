@@ -15,6 +15,12 @@ class Routes {
 
   static String employee(String key) => '$employees/${Uri.encodeComponent(key)}';
 
+  /// Routes only administrators may open (checked by the router). Reserved
+  /// for future employee edit/admin pages; none exist until the backend
+  /// provides the corresponding APIs.
+  static bool requiresAdmin(String location) =>
+      location.startsWith('/admin') || RegExp(r'^/employees/[^/]+/(edit|delete)$').hasMatch(location);
+
   /// Routes that hide the mobile bottom bar (focused flows).
   static bool hidesBottomNav(String location) => location.startsWith(enroll) || location.startsWith(enrollSuccess);
 }

@@ -52,7 +52,6 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
   _Phase _phase = _Phase.starting;
   EmployeePhoto? _photo;
   CameraIssue? _issue;
-  final _flash = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -74,7 +73,6 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _flash.dispose();
     _disposeController();
     super.dispose();
   }
@@ -122,6 +120,9 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
     );
     try {
       await controller.initialize();
+      // The plugin defaults to FlashMode.auto, which fires the flash in dim
+      // light. Registration photos are taken without flash.
+      await _disableFlash(controller);
       if (!mounted) {
         await controller.dispose();
         return;
@@ -135,6 +136,13 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
       await controller.dispose();
       _fail(CameraIssue.failure);
     }
+  }
+
+  /// Not every camera has a flash (front cameras, webcams); that is fine.
+  static Future<void> _disableFlash(CameraController c) async {
+    try {
+      await c.setFlashMode(FlashMode.off);
+    } catch (_) {}
   }
 
   void _fail(CameraIssue issue) {
@@ -158,12 +166,12 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
   Future<void> _capture() async {
     final c = _controller;
     if (c == null || !c.value.isInitialized || c.value.isTakingPicture) return;
-    _flash.value = true;
     try {
+      // Re-assert before each shot: some devices reset the mode on resume.
+      await _disableFlash(c);
       final file = await c.takePicture();
       final raw = await file.readAsBytes();
       if (!mounted) return;
-      _flash.value = false;
       setState(() => _phase = _Phase.processing);
       final photo = await FaceImageService.prepareCapture(raw);
       if (!mounted) return;
@@ -174,7 +182,6 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
       _releaseAfterTransition(); // Free the camera while reviewing.
     } catch (_) {
       if (!mounted) return;
-      _flash.value = false;
       setState(() => _phase = _controller != null ? _Phase.live : _Phase.error);
       showAppSnack(context, 'Could not capture the photograph. Please try again.', type: SnackType.error);
     }
@@ -229,7 +236,7 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(color: AppColors.peach),
+              const CircularProgressIndicator(color: AppColors.primary),
               const SizedBox(height: Space.md),
               Text('Starting camera…', style: t.bodyMedium?.copyWith(color: Colors.white70)),
               const SizedBox(height: 4),
@@ -271,7 +278,7 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
               bottom: Space.md,
               left: 0,
               right: 0,
-              child: Center(child: _badge(Icons.visibility_outlined, 'Review photo', AppColors.peach)),
+              child: Center(child: _badge(Icons.visibility_outlined, 'Review photo', AppColors.primary)),
             ),
           ],
         );
@@ -310,18 +317,6 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
           child: Center(child: _RotatingTip()),
         ),
         Positioned(top: Space.md, left: Space.md, child: _badge(Icons.circle, 'Live', AppColors.error)),
-        // Shutter flash: listens to its own notifier, so the preview is not
-        // rebuilt when it fires.
-        IgnorePointer(
-          child: ValueListenableBuilder<bool>(
-            valueListenable: _flash,
-            builder: (_, on, _) => AnimatedOpacity(
-              opacity: on ? 0.85 : 0,
-              duration: Duration(milliseconds: on ? 60 : 300),
-              child: const ColoredBox(color: Colors.white),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -390,7 +385,7 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
     }
   }
 
-  Widget _centerMessage(IconData icon, String title, String message, {Color color = AppColors.peach}) {
+  Widget _centerMessage(IconData icon, String title, String message, {Color color = AppColors.primary}) {
     final t = Theme.of(context).textTheme;
     return Center(
       child: SingleChildScrollView(
@@ -527,10 +522,10 @@ class _ShutterButtonState extends State<_ShutterButton> {
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.peach, width: 4),
+                border: Border.all(color: AppColors.primary, width: 4),
               ),
               child: Container(
-                decoration: const BoxDecoration(color: AppColors.peach, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                 child: const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 28),
               ),
             ),

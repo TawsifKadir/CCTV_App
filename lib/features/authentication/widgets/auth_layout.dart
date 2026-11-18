@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/motion.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_layout.dart';
+import '../../../core/widgets/brand_surface.dart';
 import '../../../core/widgets/enrolly_logo.dart';
 
 /// Split-screen layout on desktop (brand panel + form), stacked on mobile.
@@ -51,14 +52,27 @@ class AuthLayout extends StatelessWidget {
                 ),
               ],
             )
-          : AppBackgroundDecor(
-              child: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(Space.lg, Space.lg, Space.lg, Space.xl),
-                    child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 460), child: form),
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  const _MobileHero(),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(Space.lg, Space.lg, Space.lg, Space.xl),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 460),
+                        child: _FormColumn(
+                          title: title,
+                          subtitle: subtitle,
+                          leading: leading,
+                          footer: footer,
+                          showLogo: false,
+                          child: child,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
     );
@@ -66,7 +80,16 @@ class AuthLayout extends StatelessWidget {
 }
 
 class _FormColumn extends StatelessWidget {
-  const _FormColumn({required this.title, required this.subtitle, required this.child, this.leading, this.footer});
+  const _FormColumn({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+    this.leading,
+    this.footer,
+    this.showLogo = true,
+  });
+
+  final bool showLogo;
 
   final String title;
   final String subtitle;
@@ -77,14 +100,27 @@ class _FormColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final logo = const EnrollyLogoMark(size: 56);
+    final logo = Row(
+      children: [
+        const EnrollyLogoMark(size: 52),
+        const SizedBox(width: Space.sm),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppConstants.appName, style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(AppConstants.tagline, style: t.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (leading != null) ...[leading!, const SizedBox(height: Space.md)],
-        if (context.reduceMotion) logo else _PopIn(child: logo),
-        const SizedBox(height: Space.lg),
+        if (showLogo) ...[if (context.reduceMotion) logo else _PopIn(child: logo), const SizedBox(height: Space.lg)],
         Text(title, style: t.headlineLarge).entrance(context, index: 1),
         const SizedBox(height: Space.xs),
         Text(subtitle, style: t.bodyLarge?.copyWith(color: context.palette.textMuted)).entrance(context, index: 2),
@@ -97,62 +133,103 @@ class _FormColumn extends StatelessWidget {
   }
 }
 
+/// Branded header for phones: gradient band with the logo.
+class _MobileHero extends StatelessWidget {
+  const _MobileHero();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final top = MediaQuery.paddingOf(context).top;
+    return BrandSurface(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(Radii.xl + 10)),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(Space.lg, top + Space.xl, Space.lg, Space.xl),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(Radii.lg + 3),
+              ),
+              child: const EnrollyLogoMark(size: 58),
+            ),
+            const SizedBox(width: Space.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppConstants.appName,
+                    style: t.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    AppConstants.tagline,
+                    style: t.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).entrance(context);
+  }
+}
+
 class _BrandPanel extends StatelessWidget {
   const _BrandPanel();
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final p = context.palette;
-    return Container(
-      margin: const EdgeInsets.all(Space.md),
-      decoration: BoxDecoration(color: p.nav, borderRadius: BorderRadius.circular(Radii.xl + 8)),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned(right: -90, top: -60, child: _ring(320, AppColors.peach.withValues(alpha: 0.18))),
-          Positioned(left: -70, bottom: -90, child: _ring(260, Colors.white.withValues(alpha: 0.05))),
-          Padding(
-            padding: const EdgeInsets.all(Space.xxl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const EnrollyLogo(size: 44, light: true),
-                const Spacer(),
-                const _ScanIllustration().entrance(context),
-                const SizedBox(height: Space.xxl),
-                Text(
-                  AppConstants.tagline,
-                  style: t.displaySmall?.copyWith(color: Colors.white, height: 1.15),
-                ).entrance(context, index: 1),
-                const SizedBox(height: Space.md),
-                Text(
-                  'Register employees with a photo, and the server builds their face template for recognition. Search and browse every record in one place.',
-                  style: t.bodyLarge?.copyWith(color: Colors.white70),
-                ).entrance(context, index: 2),
-                const SizedBox(height: Space.lg),
-                Wrap(
-                  spacing: Space.xs,
-                  runSpacing: Space.xs,
-                  children: const [
-                    _Feature(icon: Icons.photo_camera_front_outlined, label: 'Camera or upload'),
-                    _Feature(icon: Icons.manage_search_rounded, label: 'Search & filter'),
-                    _Feature(icon: Icons.dns_outlined, label: 'Multi-environment'),
-                  ],
-                ).entrance(context, index: 3),
-              ],
-            ),
+    return Padding(
+      padding: const EdgeInsets.all(Space.md),
+      child: BrandSurface(
+        borderRadius: BorderRadius.circular(Radii.xl + 8),
+        child: Padding(
+          padding: const EdgeInsets.all(Space.xxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const EnrollyLogo(size: 44, light: true, showTagline: true),
+              const Spacer(),
+              const Center(child: _ScanIllustration()).entrance(context),
+              const Spacer(),
+              Text(
+                'Enroll employees in seconds.',
+                style: t.displaySmall?.copyWith(color: Colors.white, height: 1.15, fontWeight: FontWeight.w700),
+              ).entrance(context, index: 1),
+              const SizedBox(height: Space.sm),
+              Text(
+                'Capture a photo, enter the details, and the SNOWTEX server takes care of the rest.',
+                style: t.bodyLarge?.copyWith(color: Colors.white.withValues(alpha: 0.78)),
+              ).entrance(context, index: 2),
+              const SizedBox(height: Space.lg),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Feature(icon: Icons.photo_camera_front_outlined, label: 'Take a photo or upload one'),
+                  SizedBox(height: Space.sm),
+                  _Feature(icon: Icons.cloud_sync_outlined, label: 'Works offline and syncs automatically'),
+                  SizedBox(height: Space.sm),
+                  _Feature(icon: Icons.manage_search_rounded, label: 'Search the whole employee directory'),
+                ],
+              ).entrance(context, index: 3),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
-
-  Widget _ring(double size, Color color) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-  );
 }
 
 class _Feature extends StatelessWidget {
@@ -162,59 +239,95 @@ class _Feature extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(Radii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.peach),
-          const SizedBox(width: 6),
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white)),
-        ],
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(Radii.md),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Icon(icon, size: 18, color: Colors.white),
+        ),
+        const SizedBox(width: Space.sm + 2),
+        Flexible(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Decorative face-frame illustration for the brand panel.
+/// Decorative enrollment card: an oval face guide and a "Registered" record,
+/// with a second card peeking behind it.
 class _ScanIllustration extends StatelessWidget {
   const _ScanIllustration();
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      width: 260,
+    final t = Theme.of(context).textTheme;
+    Widget glass({required Widget child, double opacity = 0.12}) => Container(
+      width: 300,
       padding: const EdgeInsets.all(Space.md),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(Radii.lg),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: Colors.white.withValues(alpha: opacity),
+        borderRadius: BorderRadius.circular(Radii.xl),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 12)),
+        ],
       ),
+      child: child,
+    );
+    final front = glass(
       child: Row(
         children: [
-          const EnrollyLogoMark(size: 64, background: AppColors.peachSoft),
+          Container(
+            width: 64,
+            height: 78,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(Radii.md),
+            ),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.elliptical(20, 26)),
+                  border: Border.all(color: AppColors.navAccent, width: 2),
+                ),
+                child: const Icon(Icons.person_rounded, color: Colors.white70, size: 30),
+              ),
+            ),
+          ),
           const SizedBox(width: Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _bar(110, 0.5),
+                _bar(120, 0.55),
                 const SizedBox(height: 8),
-                _bar(80, 0.25),
+                _bar(86, 0.28),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.2),
+                    color: const Color(0xFF8FE3BE).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(Radii.pill),
                   ),
-                  child: Text(
-                    'Registered',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.success),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF8FE3BE)),
+                      const SizedBox(width: 4),
+                      Text('Registered', style: t.labelSmall?.copyWith(color: const Color(0xFF8FE3BE))),
+                    ],
                   ),
                 ),
               ],
@@ -223,8 +336,23 @@ class _ScanIllustration extends StatelessWidget {
         ],
       ),
     );
-    if (context.reduceMotion) return card;
-    return _Float(child: card);
+    final stack = SizedBox(
+      width: 330,
+      height: 150,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 30,
+            top: 0,
+            child: Transform.rotate(angle: 0.06, child: glass(opacity: 0.06, child: const SizedBox(height: 78))),
+          ),
+          Positioned(left: 0, top: 26, child: front),
+        ],
+      ),
+    );
+    if (context.reduceMotion) return stack;
+    return _Float(child: stack);
   }
 
   Widget _bar(double w, double a) => Container(

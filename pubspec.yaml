@@ -1,5 +1,5 @@
 name: cctv_app
-description: "Enrolly — Employee Enrollment & Identity Management."
+description: "SNOWTEX Employee Enrollment System."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   go_router: ^17.5.0
-  google_fonts: ^8.2.1
   camera: ^0.12.0+2
   image_picker: ^1.2.4
   image: ^4.12.0
@@ -75,8 +74,21 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Bundled so text renders identically offline and nothing is fetched at runtime.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+
   assets:
-    # In-app brand image (generated from source_photo.jpg by tool/generate_branding.dart).
+    # In-app brand image (generated from snowtex_logo.jpg by tool/generate_branding.dart).
     - assets/branding/app_logo.png
 
   # To add assets to your application, add an assets section, like this:
@@ -110,21 +122,21 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-# Launcher icons generated from the supplied branding photo.
+# Launcher icons generated from the official SNOWTEX logo.
 # Regenerate with:  dart run tool/generate_branding.dart && dart run flutter_launcher_icons
 flutter_launcher_icons:
   image_path: "assets/branding/app_icon.png"
   android: "ic_launcher"
   min_sdk_android: 21
-  adaptive_icon_background: "assets/branding/adaptive_background.png"
+  adaptive_icon_background: "#205CA4"
   adaptive_icon_foreground: "assets/branding/adaptive_foreground.png"
   ios: true
   remove_alpha_ios: true
   web:
     generate: true
     image_path: "assets/branding/app_icon.png"
-    background_color: "#F4F1E9"
-    theme_color: "#FF9966"
+    background_color: "#F5F7FA"
+    theme_color: "#205CA4"
   macos:
     generate: true
     image_path: "assets/branding/app_icon.png"

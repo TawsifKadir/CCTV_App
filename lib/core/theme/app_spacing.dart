@@ -15,10 +15,11 @@ class Space {
 /// Corner radii.
 class Radii {
   Radii._();
-  static const double sm = 12;
-  static const double md = 16;
-  static const double lg = 24;
-  static const double xl = 32;
+  // Restrained, corporate corners.
+  static const double sm = 8;
+  static const double md = 10;
+  static const double lg = 14;
+  static const double xl = 18;
   static const double pill = 999;
 
   static BorderRadius get smAll => BorderRadius.circular(sm);

@@ -20,7 +20,6 @@ void main() {
   late LocalDatabase db;
 
   setUpAll(() async {
-    AppTheme.useGoogleFonts = false;
     dir = await Directory.systemTemp.createTemp('enrolly_theme_');
     db = await LocalDatabase.open(path: dir.path);
     final c = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
@@ -115,7 +114,13 @@ void main() {
   test('dark theme is a distinct palette, not an inversion', () {
     final light = AppTheme.light();
     final dark = AppTheme.dark();
-    expect(dark.colorScheme.primary, light.colorScheme.primary, reason: 'same peach identity');
+    // Same SNOWTEX blue hue, lightened in dark mode for contrast on navy.
+    expect(light.colorScheme.primary, AppColors.primary);
+    expect(
+      HSLColor.fromColor(dark.colorScheme.primary).hue,
+      closeTo(HSLColor.fromColor(light.colorScheme.primary).hue, 6),
+    );
+    expect(dark.colorScheme.primary.computeLuminance(), greaterThan(light.colorScheme.primary.computeLuminance()));
     expect(dark.scaffoldBackgroundColor, isNot(light.scaffoldBackgroundColor));
     expect(dark.scaffoldBackgroundColor.computeLuminance(), lessThan(0.05));
     expect(dark.colorScheme.onSurface.computeLuminance(), greaterThan(0.7));

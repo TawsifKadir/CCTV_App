@@ -37,8 +37,10 @@ void main() {
     test('sends exactly {username, password} as JSON to the active environment', () async {
       await auth().login(' admin ', testPassword, remember: true);
       final logins = env.backend.requests.where((r) => r.path.endsWith('/auth/login')).toList();
-      expect(logins, hasLength(2), reason: '403 issues the CSRF token, then one automatic retry');
+      expect(logins, hasLength(1), reason: 'CSRF token is fetched first, so no 403 round trip');
+      expect(env.backend.requests.first.path, endsWith('/auth/csrf'));
       expect(logins.last.headers['X-XSRF-TOKEN'], 'csrf-abc');
+      expect(logins.last.headers['Cookie'], contains('XSRF-TOKEN=csrf-abc'));
       final req = logins.last;
       expect(req.uri.toString(), 'http://localhost:8080/api/auth/login');
       expect(req.method, 'POST');
@@ -151,6 +153,45 @@ void main() {
       );
       expect(await repo.checkAuthenticationStatus('local'), isNull, reason: 'expired');
       expect(env.sessions.value, isNull, reason: 'stale sessions are removed');
+    });
+
+    test('without /auth/csrf, the 403 CSRF challenge is retried once', () async {
+      env.backend.handler = (o) =>
+          o.path.endsWith('/auth/csrf') ? json(404, {'error': 'Not Found'}) : FakeBackend.defaultHandler(o);
+      await auth().login('admin', testPassword, remember: true);
+      final logins = env.backend.requests.where((r) => r.path.endsWith('/auth/login')).toList();
+      expect(logins, hasLength(2));
+      expect(env.read(authControllerProvider)?.accessToken, 'tok-123');
+    });
+
+    test('a restored session is validated with GET /api/auth/session (role and expiry updated)', () async {
+      final restarted = await TestEnv.create(initialSession: testSession());
+      addTearDown(restarted.dispose);
+      restarted.container.listen(authControllerProvider, (_, _) {});
+      await restarted.read(authControllerProvider.notifier).checkAuthenticationStatus();
+      final s = restarted.read(authControllerProvider);
+      expect(restarted.backend.requests.any((r) => r.path.endsWith('/auth/session')), isTrue);
+      expect(s?.operator.roles, ['admin']);
+      expect(s?.expiresAt?.isAfter(DateTime.now()), isTrue);
+    });
+
+    test('a restored session the server rejects (401) signs out', () async {
+      final restarted = await TestEnv.create(initialSession: testSession());
+      addTearDown(restarted.dispose);
+      restarted.container.listen(authControllerProvider, (_, _) {});
+      restarted.backend.handler = (o) => json(401, {'status': 401});
+      await restarted.read(authControllerProvider.notifier).checkAuthenticationStatus();
+      await Future<void>.delayed(Duration.zero);
+      expect(restarted.read(authControllerProvider), isNull);
+    });
+
+    test('a restored session is kept when the server cannot be reached', () async {
+      final restarted = await TestEnv.create(initialSession: testSession());
+      addTearDown(restarted.dispose);
+      restarted.container.listen(authControllerProvider, (_, _) {});
+      restarted.backend.handler = (o) => throw const SocketException('down');
+      await restarted.read(authControllerProvider.notifier).checkAuthenticationStatus();
+      expect(restarted.read(authControllerProvider), isNotNull);
     });
 
     test('a restored session survives restart', () async {

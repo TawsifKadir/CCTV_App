@@ -57,7 +57,7 @@ class _CameraCaptureFrameState extends State<CameraCaptureFrame> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.success ? AppColors.success : AppColors.peach;
+    final color = widget.success ? AppColors.success : AppColors.primary;
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,

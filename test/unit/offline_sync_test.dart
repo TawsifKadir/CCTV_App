@@ -268,8 +268,8 @@ void main() {
       expect(out!.savedOnDeviceOnly, isTrue);
       expect(out.uncertain, isTrue);
       final e = locals().single;
-      expect(e.syncStatus, SyncStatus.failed);
-      expect(e.needsReconciliation, isTrue);
+      expect(e.syncStatus, SyncStatus.reconciliationRequired);
+      expect(e.syncStatus.code, 'RECONCILIATION_REQUIRED');
       expect(server.employees, hasLength(1), reason: 'the server did save it');
 
       server.timeoutAfterSave = false;
@@ -305,7 +305,7 @@ void main() {
       server.timeoutAfterSave = true;
       await register('Uma Twin'); // same details, genuinely a second registration
       server.timeoutAfterSave = false;
-      final second = locals().firstWhere((e) => e.needsReconciliation);
+      final second = locals().firstWhere((e) => e.syncStatus == SyncStatus.reconciliationRequired);
       final r = await env.read(syncEngineProvider).syncRecord(second.localId);
       expect(r.outcome, UploadOutcome.alreadySynced);
       expect(locals().map((e) => e.serverId).toSet(), {
@@ -363,8 +363,7 @@ void main() {
       env.read(syncEngineProvider); // creating the engine recovers interrupted uploads
       await env.settle();
       final after = env.read(localEmployeeRepositoryProvider).get(victim.localId)!;
-      expect(after.syncStatus, SyncStatus.failed);
-      expect(after.needsReconciliation, isTrue);
+      expect(after.syncStatus, SyncStatus.reconciliationRequired);
       expect(after.statusLabel, 'Needs review');
 
       server.down = false;

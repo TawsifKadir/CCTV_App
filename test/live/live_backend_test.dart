@@ -56,6 +56,20 @@ void main() {
       print('live login OK: user=${s.operator.username} roles=${s.operator.roles} expires=${s.expiresAt}');
     });
 
+    test('GET /api/auth/session confirms the signed-in session; logout ends it', () async {
+      AuthSession? s;
+      final fresh = ApiClient(environment: env, authHeader: () => s?.requestHeaders ?? const {});
+      addTearDown(fresh.close);
+      final auth = AuthApiService(fresh);
+      s = await auth.login(_username, _password);
+      final info = await auth.session();
+      expect(info['username'], _username);
+      expect(DateTime.tryParse('${info['expiresAt']}'), isNotNull);
+      // ignore: avoid_print
+      print('live session OK: role=${info['role']} expiresAt=${info['expiresAt']}');
+      await auth.logout();
+    });
+
     test('incorrect password is rejected with a friendly message', () async {
       final fresh = ApiClient(environment: env);
       addTearDown(fresh.close);

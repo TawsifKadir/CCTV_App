@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/authentication/providers/auth_controller.dart';
 import '../../features/connectivity/app_features_provider.dart';
-import '../../features/connectivity/connectivity_widgets.dart';
 import '../../features/environments/presentation/widgets/environment_widgets.dart';
 import '../../features/sync/presentation/sync_providers.dart';
+import '../../features/authentication/domain/permissions.dart';
+import '../../features/connectivity/connectivity_service.dart';
+import '../../features/employees/presentation/providers/employee_providers.dart';
 import '../../features/sync/presentation/sync_widgets.dart';
 import '../config/app_features.dart';
 import '../../features/authentication/widgets/dev_login_tools.dart' show DemoModeBadge;
@@ -39,7 +41,7 @@ const _dashboard = NavDestination(
 );
 const _employees = NavDestination(
   Routes.employees,
-  'Employee Management',
+  'Employees',
   Icons.people_alt_outlined,
   Icons.people_alt_rounded,
   shortLabel: 'Employees',
@@ -67,7 +69,7 @@ const _diagnostics = NavDestination(
 const _settings = NavDestination(Routes.settings, 'Settings', Icons.tune_outlined, Icons.tune_rounded);
 const _environment = NavDestination(
   Routes.environment,
-  'Environment Configuration',
+  'Environment',
   Icons.dns_outlined,
   Icons.dns_rounded,
   shortLabel: 'Environment',
@@ -78,15 +80,18 @@ const mobileDestinations = [_dashboard, _employees, _register, _sync, _settings]
 
 /// Desktop sidebar (Logout is rendered separately at the bottom). Admin
 /// builds add environment configuration and diagnostics.
-List<NavDestination> sidebarDestinations(AppFeatures f) => [
-  _dashboard,
-  _employees,
-  _register,
+/// Primary tasks first: registration and the directory.
+const sidebarPrimary = [_dashboard, _register, _employees];
+
+/// Secondary pages (admin builds add configuration and diagnostics).
+List<NavDestination> sidebarSecondary(AppFeatures f) => [
   _sync,
   _settings,
   if (f.environmentConfiguration) _environment,
   if (f.networkInspector) _diagnostics,
 ];
+
+List<NavDestination> sidebarDestinations(AppFeatures f) => [...sidebarPrimary, ...sidebarSecondary(f)];
 
 bool _isActive(String location, String path) => location == path || location.startsWith('$path/');
 
@@ -114,16 +119,18 @@ class AppShell extends ConsumerWidget {
     final p = context.palette;
     // Connectivity monitoring + automatic sync live as long as the shell.
     ref.watch(syncCoordinatorProvider);
-    // The status bar consumes the top safe-area inset; remove it from the
-    // page so it isn't applied twice.
-    final page = Column(
-      children: [
-        const ShellStatusBar(),
-        Expanded(
-          child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
-        ),
-      ],
-    );
+    // The status bar appears only when there is something to report; when
+    // shown it consumes the top safe-area inset, so the page drops it.
+    final page = ref.watch(statusBarVisibleProvider)
+        ? Column(
+            children: [
+              const ShellStatusBar(),
+              Expanded(
+                child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
+              ),
+            ],
+          )
+        : child;
 
     if (context.useSidebar) {
       final pref = ref.watch(sidebarCollapsedProvider);
@@ -172,7 +179,8 @@ class AppBottomNavigation extends StatelessWidget {
               Container(
                 height: 70,
                 decoration: BoxDecoration(
-                  color: p.nav,
+                  color: context.isDark ? p.nav : null,
+                  gradient: context.isDark ? null : AppColors.brandGradient,
                   borderRadius: BorderRadius.circular(Radii.xl),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 20, offset: const Offset(0, 8)),
@@ -210,7 +218,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = dest.shortLabel ?? dest.label;
-    final color = active ? AppColors.peach : Colors.white.withValues(alpha: 0.72);
+    final color = active ? AppColors.navAccent : Colors.white.withValues(alpha: 0.72);
     return Semantics(
       selected: active,
       button: true,
@@ -223,13 +231,16 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(active ? dest.activeIcon : dest.icon, color: color, size: 24),
             const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall!.copyWith(color: color, fontWeight: active ? FontWeight.w700 : FontWeight.w500),
+            // Scales down on very narrow phones instead of truncating.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall!.copyWith(color: color, fontWeight: active ? FontWeight.w700 : FontWeight.w500),
+              ),
             ),
           ],
         ),
@@ -301,12 +312,12 @@ class _CenterRegisterButtonState extends State<_CenterRegisterButton> with Singl
                   width: 62,
                   height: 62,
                   decoration: BoxDecoration(
-                    color: AppColors.peach,
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                     border: Border.all(color: bg, width: 4),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.peach.withValues(alpha: 0.4),
+                        color: AppColors.primary.withValues(alpha: 0.4),
                         blurRadius: 14,
                         offset: const Offset(0, 5),
                       ),
@@ -334,7 +345,7 @@ class _HaloPainter extends CustomPainter {
     canvas.drawCircle(
       size.center(Offset.zero),
       30 + 8 * v,
-      Paint()..color = AppColors.peach.withValues(alpha: 0.28 * (1 - v)),
+      Paint()..color = AppColors.primary.withValues(alpha: 0.28 * (1 - v)),
     );
   }
 
@@ -354,7 +365,15 @@ class AppSidebar extends ConsumerWidget {
     final p = context.palette;
     final t = Theme.of(context).textTheme;
     final operator = ref.watch(authControllerProvider);
-    final width = collapsed ? 88.0 : 268.0;
+    final width = collapsed ? 88.0 : 260.0;
+    Widget item(NavDestination d) => _SidebarItem(
+      key: Key('nav-${d.path}'),
+      label: d.label,
+      icon: _isActive(location, d.path) ? d.activeIcon : d.icon,
+      active: _isActive(location, d.path),
+      collapsed: collapsed,
+      onTap: () => context.go(d.path),
+    );
 
     return AnimatedContainer(
       duration: context.motion(Motion.medium),
@@ -362,7 +381,8 @@ class AppSidebar extends ConsumerWidget {
       width: width,
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: p.nav,
+        color: context.isDark ? p.nav : null,
+        gradient: context.isDark ? null : AppColors.navGradient,
         borderRadius: BorderRadius.circular(Radii.xl),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8))],
       ),
@@ -389,7 +409,7 @@ class AppSidebar extends ConsumerWidget {
                           children: [
                             Text(AppConstants.appName, style: t.titleLarge?.copyWith(color: Colors.white)),
                             Text(
-                              'Identity management',
+                              'Employee Enrollment',
                               style: t.labelSmall?.copyWith(color: Colors.white54),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -401,28 +421,22 @@ class AppSidebar extends ConsumerWidget {
                   ],
                 ),
                 if (collapsed) ...[const SizedBox(height: 12), Center(child: _CollapseButton(collapsed: collapsed))],
-                const SizedBox(height: 16),
-                const SizedBox(height: 16),
-                _SidebarRegisterButton(collapsed: collapsed),
-                const SizedBox(height: 16),
+                const SizedBox(height: 28),
                 Expanded(
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      for (final d in sidebarDestinations(ref.watch(appFeaturesProvider)))
-                        _SidebarItem(
-                          key: Key('nav-${d.path}'),
-                          label: d.label,
-                          icon: _isActive(location, d.path) ? d.activeIcon : d.icon,
-                          active: _isActive(location, d.path),
-                          collapsed: collapsed,
-                          onTap: () => context.go(d.path),
-                        ),
+                      for (final d in sidebarPrimary) item(d),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                        child: Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
+                      ),
+                      for (final d in sidebarSecondary(ref.watch(appFeaturesProvider))) item(d),
                     ],
                   ),
                 ),
                 if (operator != null && !collapsed) ...[
-                  _OperatorCard(name: operator.operator.fullName, email: operator.operator.username),
+                  _OperatorCard(name: operator.operator.fullName, email: ref.watch(permissionsProvider).roleLabel),
                   const SizedBox(height: 8),
                 ],
                 _SidebarItem(
@@ -460,46 +474,6 @@ class _CollapseButton extends ConsumerWidget {
   }
 }
 
-class _SidebarRegisterButton extends StatelessWidget {
-  const _SidebarRegisterButton({required this.collapsed});
-  final bool collapsed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    return Tooltip(
-      message: collapsed ? 'Register employee' : '',
-      child: Material(
-        color: AppColors.peach,
-        borderRadius: BorderRadius.circular(Radii.md + 2),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(Radii.md + 2),
-          onTap: () => context.go(Routes.enroll),
-          child: SizedBox(
-            height: 52,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.add_rounded, color: Colors.white),
-                if (!collapsed) ...[
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      'New Employee',
-                      style: t.labelLarge?.copyWith(color: Colors.white),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SidebarItem extends StatefulWidget {
   const _SidebarItem({
     super.key,
@@ -527,7 +501,7 @@ class _SidebarItemState extends State<_SidebarItem> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final active = widget.active;
-    final fg = active ? AppColors.peach : Colors.white.withValues(alpha: _hover ? 0.95 : 0.7);
+    final fg = active ? Colors.white : Colors.white.withValues(alpha: _hover ? 0.95 : 0.72);
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Tooltip(
@@ -548,8 +522,8 @@ class _SidebarItemState extends State<_SidebarItem> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: active
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : (_hover ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : (_hover ? Colors.white.withValues(alpha: 0.06) : Colors.transparent),
                   borderRadius: BorderRadius.circular(Radii.md),
                 ),
                 child: Row(
@@ -599,10 +573,10 @@ class _OperatorCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.peach.withValues(alpha: 0.2),
+            backgroundColor: AppColors.navAccent.withValues(alpha: 0.22),
             child: Text(
               Fmt.initials(name),
-              style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w700),
+              style: t.labelMedium?.copyWith(color: AppColors.navAccent, fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 10),
@@ -629,51 +603,78 @@ class _OperatorCard extends StatelessWidget {
   }
 }
 
-/// Top status bar on every screen: connectivity, pending uploads and (on
-/// wide layouts) Sync now. Admin builds also show the environment badge;
-/// client builds never show environment details.
+/// Whether the status bar has anything to show. Nothing is shown while
+/// everything works (no permanent "Online" badge); admin builds always show
+/// the environment so testers know which server they use.
+final statusBarVisibleProvider = Provider<bool>((ref) {
+  final status = ref.watch(networkStatusProvider);
+  final problem = status == NetworkStatus.offline || status == NetworkStatus.serverUnavailable;
+  final demo = !kProductionBuild && ref.watch(isDemoSessionProvider);
+  return problem ||
+      demo ||
+      ref.watch(appFeaturesProvider).environmentIndicator ||
+      ref.watch(localCountsProvider).awaiting > 0;
+});
+
+/// Status bar: connection problems (with reassuring text), pending uploads
+/// and — in non-production builds — environment and DEMO MODE badges.
 class ShellStatusBar extends ConsumerWidget {
   const ShellStatusBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final features = ref.watch(appFeaturesProvider);
+    final status = ref.watch(networkStatusProvider);
     final wide = context.useSidebar;
+    final t = Theme.of(context).textTheme;
+    final message = switch (status) {
+      NetworkStatus.offline => "You're offline. Your registrations are safe.",
+      NetworkStatus.serverUnavailable =>
+        'Unable to reach the server. You can continue working with locally stored records.',
+      _ => null,
+    };
+    final pending = ref.watch(localCountsProvider).awaiting;
     final p = context.palette;
     return Material(
-      color: p.background,
+      color: message != null ? Color.alphaBlend(AppColors.warning.withValues(alpha: 0.16), p.background) : p.background,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(context.pagePadding, wide ? 10 : 6, context.pagePadding, wide ? 0 : 2),
-          child: SizedBox(
-            height: wide ? 46 : 30,
-            child: Row(
-              children: [
-                // Scrolls instead of overflowing on narrow phones.
+          padding: EdgeInsets.fromLTRB(context.pagePadding, wide ? 10 : 6, context.pagePadding, 6),
+          child: Row(
+            children: [
+              if (!kProductionBuild && ref.watch(isDemoSessionProvider)) ...[
+                const DemoModeBadge(),
+                const SizedBox(width: Space.xs),
+              ],
+              if (features.environmentIndicator) ...[
+                const EnvironmentBadge(dense: true),
+                const SizedBox(width: Space.xs),
+              ],
+              if (message != null) ...[
+                Icon(
+                  status == NetworkStatus.offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+                  size: 18,
+                  color: context.onTint(AppColors.warning),
+                ),
+                const SizedBox(width: Space.xs),
                 Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        if (!kProductionBuild && ref.watch(isDemoSessionProvider)) ...[
-                          const DemoModeBadge(),
-                          const SizedBox(width: Space.xs),
-                        ],
-                        if (features.environmentIndicator) ...[
-                          const EnvironmentBadge(dense: true),
-                          const SizedBox(width: Space.xs),
-                        ],
-                        const ConnectivityPill(),
-                        const SizedBox(width: Space.xs),
-                        const PendingSyncChip(),
-                      ],
-                    ),
+                  child: Text(
+                    message,
+                    key: const Key('connection-banner'),
+                    style: t.bodySmall?.copyWith(color: context.onTint(AppColors.warning), fontWeight: FontWeight.w600),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (wide) const SyncNowButton(height: 40),
+              ] else
+                const Spacer(),
+              if (pending > 0) ...[const SizedBox(width: Space.xs), const PendingSyncChip()],
+              if (wide && pending > 0 && message == null) ...[
+                const SizedBox(width: Space.sm),
+                const SyncNowButton(height: 38),
               ],
-            ),
+            ],
           ),
         ),
       ),

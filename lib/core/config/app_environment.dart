@@ -20,6 +20,10 @@ class BuildDefines {
 
   /// Lets non-production builds switch environments at runtime (Settings).
   static const allowEnvironmentSwitching = bool.fromEnvironment('ALLOW_ENV_SWITCHING', defaultValue: true);
+
+  /// Explicit acknowledgement that the production server is plain HTTP.
+  /// Without it, production builds refuse to start (see EnvironmentConfig).
+  static const allowInsecureProduction = bool.fromEnvironment('ALLOW_INSECURE_PRODUCTION');
 }
 
 /// How the build's environment was chosen.
@@ -88,6 +92,7 @@ BuildEnvironment resolveBuildEnvironment({
   String? apiBaseUrlOverride,
   String? localHostOverride,
   bool? allowSwitching,
+  bool? allowInsecureProduction,
   PlatformInfo? platform,
 }) {
   final pf = platform ?? PlatformInfo.current();
@@ -111,7 +116,9 @@ BuildEnvironment resolveBuildEnvironment({
     );
   }
 
-  var config = EnvironmentRegistry.configFor(def, platform: pf, localHostOverride: hostOverride);
+  final insecureOk = allowInsecureProduction ?? BuildDefines.allowInsecureProduction;
+  EnvironmentConfig ack(EnvironmentConfig c) => c.isProduction ? c.copyWith(insecureHttpAcknowledged: insecureOk) : c;
+  var config = ack(EnvironmentRegistry.configFor(def, platform: pf, localHostOverride: hostOverride));
   if (urlOverride.isNotEmpty) {
     config = config.copyWith(baseUrl: urlOverride, notes: 'Base URL set with API_BASE_URL for this build.');
   }
@@ -119,8 +126,10 @@ BuildEnvironment resolveBuildEnvironment({
   if (error != null) {
     throw EnvironmentConfigurationException(
       def.id,
-      '$error\n\nSet its baseUrl in lib/core/config/environment_registry.dart, '
-      'or build with --dart-define=API_BASE_URL=<url>.',
+      config.baseUrl == null
+          ? '$error\n\nSet its baseUrl in lib/core/config/environment_registry.dart, '
+                'or build with --dart-define=API_BASE_URL=<url>.'
+          : error,
     );
   }
 
@@ -128,7 +137,7 @@ BuildEnvironment resolveBuildEnvironment({
   final available = switching
       ? [
           for (final e in EnvironmentRegistry.all(platform: pf, localHostOverride: hostOverride))
-            if (e.environmentId == config.environmentId) config else if (e.isConfigured) e,
+            if (e.environmentId == config.environmentId) config else if (ack(e).isConfigured) ack(e),
         ]
       : [config];
 

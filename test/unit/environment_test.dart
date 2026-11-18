@@ -58,11 +58,24 @@ void main() {
   });
 
   group('Build environment resolution', () {
-    test('development points at the live development server', () {
-      final b = _resolve(appEnv: 'development');
+    test('production points at the SNOWTEX server and refuses plain HTTP unless acknowledged', () {
+      expect(
+        () => _resolve(appEnv: 'production'),
+        throwsA(isA<EnvironmentConfigurationException>().having((e) => e.message, 'm', contains('HTTPS'))),
+      );
+      final b = resolveBuildEnvironment(
+        appEnv: 'production',
+        flavor: '',
+        apiBaseUrlOverride: '',
+        localHostOverride: '',
+        allowInsecureProduction: true,
+        platform: _web,
+      );
       expect(b.config.baseUrl, 'http://27.147.174.107:8085');
       expect(b.config.apiBaseUrl, 'http://27.147.174.107:8085/api');
-      expect(b.runtimeSwitchingAllowed, isTrue);
+      expect(b.config.websiteUrl, 'http://27.147.174.107:8085/');
+      expect(b.config.isSecure, isFalse);
+      expect(b.runtimeSwitchingAllowed, isFalse);
     });
 
     test('APP_ENV wins over the flavor', () {
@@ -78,7 +91,7 @@ void main() {
     });
 
     test('unconfigured environments fail clearly instead of falling back to localhost', () {
-      for (final id in ['qa', 'production']) {
+      for (final id in ['development', 'qa']) {
         expect(
           () => _resolve(appEnv: id),
           throwsA(
@@ -127,9 +140,8 @@ void main() {
       expect(b.runtimeSwitchingAllowed, isTrue);
       expect(b.available.map((e) => e.environmentId), [
         'local',
-        'development',
-      ], reason: 'QA/production have no URL yet');
-      expect(b.unconfigured(platform: _web).map((e) => e.environmentId), ['qa', 'production']);
+      ], reason: 'dev/QA unconfigured; production needs the HTTP acknowledgement');
+      expect(b.unconfigured(platform: _web).map((e) => e.environmentId), ['development', 'qa', 'production']);
       expect(_resolve(appEnv: 'local', switching: false).available, hasLength(1));
     });
 

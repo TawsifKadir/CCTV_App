@@ -33,37 +33,31 @@ android {
     // One flavor per backend environment. The flavor name is exposed to Dart
     // as `appFlavor` and selects the matching entry in
     // lib/core/config/environment_registry.dart (APP_ENV overrides it).
-    // Cleartext HTTP is allowed only for `local` (backend on the developer's
-    // machine) and `development` (its server is plain http://); qa and
-    // production are HTTPS-only.
+    // Cleartext HTTP policy per flavor: src/<flavor>/res/xml/network_security_config.xml
+    // (production: HTTPS only, except the SNOWTEX server until it has TLS).
     flavorDimensions += "environment"
     productFlavors {
         create("local") {
             dimension = "environment"
             applicationIdSuffix = ".local"
             versionNameSuffix = "-local"
-            resValue("string", "app_name", "Enrolly Local")
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
+            resValue("string", "app_name", "SNOWTEX Local")
         }
         create("development") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "Enrolly Dev")
-            // The development server (http://27.147.174.107:8085) is plain HTTP.
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
+            resValue("string", "app_name", "SNOWTEX Dev")
         }
         create("qa") {
             dimension = "environment"
             applicationIdSuffix = ".qa"
             versionNameSuffix = "-qa"
-            resValue("string", "app_name", "Enrolly QA")
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
+            resValue("string", "app_name", "SNOWTEX QA")
         }
         create("production") {
             dimension = "environment"
-            resValue("string", "app_name", "Enrolly")
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
+            resValue("string", "app_name", "SNOWTEX")
         }
     }
 

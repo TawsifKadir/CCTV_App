@@ -49,6 +49,6 @@ enum RecordFilter {
     RecordFilter.onServer => s == SyncStatus.synced,
     RecordFilter.localOnly => s == SyncStatus.localOnly,
     RecordFilter.pending => s == SyncStatus.pendingSync || s == SyncStatus.syncing,
-    RecordFilter.failed => s == SyncStatus.failed,
+    RecordFilter.failed => s == SyncStatus.failed || s == SyncStatus.reconciliationRequired,
   };
 }

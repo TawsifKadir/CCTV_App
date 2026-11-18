@@ -48,6 +48,8 @@ class FakeBackend implements HttpClientAdapter {
   /// Answers list requests with [samplePage] and registrations with 201.
   static FutureOr<ResponseBody> defaultHandler(RequestOptions o) {
     if (o.path.endsWith('/auth/login')) return fakeLogin(o);
+    if (o.path.endsWith('/auth/csrf')) return fakeCsrf();
+    if (o.path.endsWith('/auth/session')) return fakeSession(o);
     if (o.path.endsWith('/employee/add')) return json(201, {...sampleEmployeeJson(), 'liveWatchList': true});
     final q = o.queryParameters;
     return json(200, samplePage(page: (q['page'] as int?) ?? 0, size: (q['size'] as int?) ?? 24, total: 30));
@@ -71,7 +73,7 @@ const testPassword = 'Admin@123';
 /// Spring's cookie CSRF: without a matching X-XSRF-TOKEN it answers 403 and
 /// issues a token (like the real server).
 ResponseBody fakeLogin(RequestOptions o) {
-  const xsrf = 'csrf-abc';
+  const xsrf = _xsrf;
   if (o.headers['X-XSRF-TOKEN'] != xsrf || !(o.headers['Cookie']?.toString().contains('XSRF-TOKEN=$xsrf') ?? false)) {
     return ResponseBody.fromString(
       jsonEncode({'status': 403, 'error': 'Forbidden', 'timestamp': 'x'}),
@@ -89,9 +91,34 @@ ResponseBody fakeLogin(RequestOptions o) {
   return json(401, {'message': 'Invalid username or password.'});
 }
 
+const _xsrf = 'csrf-abc';
+
+/// Stand-in for GET /api/auth/csrf: Spring's CsrfToken body plus the cookie.
+ResponseBody fakeCsrf() => ResponseBody.fromString(
+  jsonEncode({'headerName': 'X-XSRF-TOKEN', 'parameterName': '_csrf', 'token': _xsrf}),
+  200,
+  headers: {
+    'set-cookie': ['XSRF-TOKEN=$_xsrf; Path=/'],
+    Headers.contentTypeHeader: ['application/json'],
+  },
+);
+
+/// Stand-in for GET /api/auth/session ({expiresAt, username, role}); 401
+/// without a bearer token.
+ResponseBody fakeSession(RequestOptions o, {String role = 'admin'}) {
+  if (!(o.headers['Authorization']?.toString().startsWith('Bearer ') ?? false)) {
+    return json(401, {'status': 401, 'error': 'Unauthorized'});
+  }
+  return json(200, {
+    'expiresAt': DateTime.now().toUtc().add(const Duration(minutes: 30)).toIso8601String(),
+    'username': 'admin',
+    'role': role,
+  });
+}
+
 /// A signed-in session for the test environment.
-AuthSession testSession({String environmentId = 'local'}) => AuthSession(
-  operator: const Operator(username: 'admin', displayName: 'Admin User'),
+AuthSession testSession({String environmentId = 'local', List<String> roles = const []}) => AuthSession(
+  operator: Operator(username: 'admin', displayName: 'Admin User', roles: roles),
   environmentId: environmentId,
   createdAt: DateTime(2026, 11, 17),
   accessToken: 'tok-123',
@@ -134,15 +161,20 @@ Map<String, dynamic> samplePage({int page = 0, int size = 24, int total = 30}) {
 }
 
 /// Local build environment for tests (web-style localhost).
-BuildEnvironment testBuildEnvironment({String appEnv = 'local', String? apiBaseUrl, bool allowSwitching = true}) =>
-    resolveBuildEnvironment(
-      appEnv: appEnv,
-      flavor: '',
-      apiBaseUrlOverride: apiBaseUrl ?? '',
-      localHostOverride: '',
-      allowSwitching: allowSwitching,
-      platform: const PlatformInfo(isWeb: true, platform: TargetPlatform.linux),
-    );
+BuildEnvironment testBuildEnvironment({
+  String appEnv = 'local',
+  String? apiBaseUrl,
+  bool allowSwitching = true,
+  bool allowInsecureProduction = false,
+}) => resolveBuildEnvironment(
+  appEnv: appEnv,
+  flavor: '',
+  apiBaseUrlOverride: apiBaseUrl ?? '',
+  localHostOverride: '',
+  allowSwitching: allowSwitching,
+  allowInsecureProduction: allowInsecureProduction,
+  platform: const PlatformInfo(isWeb: true, platform: TargetPlatform.linux),
+);
 
 /// Real Hive storage in a throwaway directory + a Riverpod container wired
 /// like the app, with a [FakeBackend] behind the HTTP client.
@@ -278,6 +310,8 @@ class FakeServer {
   FutureOr<ResponseBody> _handle(RequestOptions o) {
     if (down) throw const SocketException('Connection refused');
     if (o.path.endsWith('/auth/login')) return fakeLogin(o);
+    if (o.path.endsWith('/auth/csrf')) return fakeCsrf();
+    if (o.path.endsWith('/auth/session')) return fakeSession(o);
     if (o.path.endsWith('/employee/add')) {
       postCount++;
       final form = o.data as FormData;

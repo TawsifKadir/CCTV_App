@@ -7,7 +7,6 @@ import 'package:cctv_app/core/routing/app_shell.dart';
 import 'package:cctv_app/core/routing/routes.dart';
 import 'package:cctv_app/core/services/app_notifier.dart';
 import 'package:cctv_app/core/services/providers.dart';
-import 'package:cctv_app/core/theme/app_theme.dart';
 import 'package:cctv_app/data/local/local_database.dart';
 import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
 import 'package:cctv_app/features/connectivity/connectivity_service.dart';
@@ -28,7 +27,6 @@ void main() {
   late LocalDatabase db;
 
   setUpAll(() async {
-    AppTheme.useGoogleFonts = false;
     dir = await Directory.systemTemp.createTemp('enrolly_modes_');
     db = await LocalDatabase.open(path: dir.path);
     final c = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
@@ -86,21 +84,14 @@ void main() {
     testWidgets('navigation has only client destinations', (tester) async {
       await pump(tester, environment: production);
       final sidebar = find.byType(AppSidebar);
-      for (final label in [
-        'Dashboard',
-        'Employee Management',
-        'Register Employee',
-        'Synchronization',
-        'Settings',
-        'Logout',
-      ]) {
+      for (final label in ['Dashboard', 'Employees', 'Register Employee', 'Synchronization', 'Settings', 'Logout']) {
         expect(
           find.descendant(of: sidebar, matching: find.text(label)),
           findsOneWidget,
           reason: label,
         );
       }
-      expect(find.descendant(of: sidebar, matching: find.text('Environment Configuration')), findsNothing);
+      expect(find.descendant(of: sidebar, matching: find.text('Environment')), findsNothing);
       expect(find.descendant(of: sidebar, matching: find.text('Diagnostics')), findsNothing);
       expect(find.byType(EnvironmentBadge), findsNothing, reason: 'no environment indicator for clients');
     });
@@ -129,11 +120,20 @@ void main() {
 
     testWidgets('dashboard has the client figures', (tester) async {
       await pump(tester, environment: production);
-      for (final k in ['stat-server', 'stat-local', 'stat-awaiting', 'stat-synced', 'sync-status-card']) {
+      for (final k in [
+        'dashboard-welcome',
+        'action-register',
+        'action-employees',
+        'stat-total',
+        'stat-pending',
+        'stat-synced',
+      ]) {
         expect(find.byKey(Key(k)), findsOneWidget, reason: k);
       }
-      expect(find.text('Photo uploads'), findsNothing, reason: 'admin-only figure');
-      expect(find.text('Recent activity'), findsNothing);
+      expect(find.text('Welcome, Admin User'), findsOneWidget);
+      expect(find.text('Recent activity'), findsNothing, reason: 'no technical panels');
+      expect(find.byKey(const Key('connection-banner')), findsNothing, reason: 'no permanent online badge');
+      expect(find.text('Online'), findsNothing);
     });
   });
 
@@ -178,16 +178,15 @@ void main() {
 
     testWidgets('status indicator and dashboard follow connectivity changes', (tester) async {
       final (c, network) = await pump(tester, size: const Size(390, 844));
-      expect(find.text('Online'), findsWidgets);
+      expect(find.byKey(const Key('connection-banner')), findsNothing, reason: 'nothing shown while working');
       network.set(DeviceNetwork.none);
       await tester.pumpAndSettle();
-      expect(find.text('Offline'), findsWidgets);
-      expect(find.textContaining('can\'t be reached'), findsOneWidget, reason: 'hero shows the offline state');
+      expect(find.text("You're offline. Your registrations are safe."), findsOneWidget);
       network.set(DeviceNetwork.wifi);
       await tester.pump();
       await tester.runAsync(() => c.read(connectionStatusProvider.notifier).check());
       await tester.pumpAndSettle();
-      expect(find.text('Online'), findsWidgets);
+      expect(find.byKey(const Key('connection-banner')), findsNothing);
     });
 
     testWidgets('local records are listed with status badges and filter counts', (tester) async {

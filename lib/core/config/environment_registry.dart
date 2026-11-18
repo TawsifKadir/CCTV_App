@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'app_environment.dart';
 import 'environment_config.dart';
 
 /// Where the running app is, for resolving "localhost" correctly.
@@ -27,7 +28,11 @@ class EnvironmentDefinition {
     this.apiPrefix = '/api',
     this.isProduction = false,
     this.allowDebugFeatures = false,
+    this.websiteUrl,
   }) : assert(baseUrl == null || localPort == null, 'Use either baseUrl or localPort');
+
+  /// Web front end of this environment, kept separate from the API base.
+  final String? websiteUrl;
 
   final String id;
   final String name;
@@ -67,18 +72,22 @@ class EnvironmentRegistry {
   static const definitions = <EnvironmentDefinition>[
     // Spring Boot backend running on the developer's machine.
     EnvironmentDefinition(id: 'local', name: 'Local', localPort: 8080, allowDebugFeatures: true),
-    // Live development server. Plain HTTP: traffic (including employee
-    // photos) is unencrypted — move to HTTPS before real use.
-    EnvironmentDefinition(
-      id: 'development',
-      name: 'Development',
-      baseUrl: 'http://27.147.174.107:8085',
-      allowDebugFeatures: true,
-    ),
+    // UNCONFIGURED — set baseUrl when the development server URL is known.
+    EnvironmentDefinition(id: 'development', name: 'Development', baseUrl: null, allowDebugFeatures: true),
     // UNCONFIGURED — set baseUrl when the QA server URL is known.
     EnvironmentDefinition(id: 'qa', name: 'QA', baseUrl: null),
-    // UNCONFIGURED — set baseUrl (HTTPS only) when the production URL is known.
-    EnvironmentDefinition(id: 'production', name: 'Production', baseUrl: null, isProduction: true),
+    // SNOWTEX production (Monitry). The Spring Boot server serves both the
+    // website and the API on this origin (API under /api — verified).
+    // WARNING: plain HTTP on a public IP. Builds are refused unless
+    // ALLOW_INSECURE_PRODUCTION=true is passed; move to HTTPS before
+    // handling real employee data.
+    EnvironmentDefinition(
+      id: 'production',
+      name: 'Production',
+      baseUrl: 'http://27.147.174.107:8085',
+      websiteUrl: 'http://27.147.174.107:8085/',
+      isProduction: true,
+    ),
   ];
 
   /// Host used to reach the developer machine from a local build.
@@ -123,6 +132,8 @@ class EnvironmentRegistry {
       isProduction: d.isProduction,
       allowDebugFeatures: d.allowDebugFeatures,
       notes: notes,
+      websiteUrl: d.websiteUrl,
+      insecureHttpAcknowledged: d.isProduction && BuildDefines.allowInsecureProduction,
     );
   }
 

@@ -47,7 +47,38 @@ class SyncScreen extends ConsumerWidget {
 
     final stats = LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 720 ? 5 : 2;
+        // Phones: the three figures that matter, one compact row.
+        final compact = c.maxWidth < 720;
+        if (compact) {
+          Widget tile(String label, int v, Color accent) => Expanded(
+            child: AppCard(
+              border: true,
+              padding: const EdgeInsets.symmetric(horizontal: Space.sm, vertical: Space.sm + 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text('$v', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: accent)),
+                ],
+              ),
+            ),
+          );
+          return Row(
+            children: [
+              tile('Pending', counts.pending + counts.localOnly + counts.syncing, AppColors.info),
+              const SizedBox(width: Space.xs),
+              tile('Failed', counts.failed, AppColors.error),
+              const SizedBox(width: Space.xs),
+              tile('Synced', counts.synced, AppColors.success),
+            ],
+          );
+        }
+        const cols = 5;
         final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
         final items = [
           AppStatCard(
@@ -81,7 +112,7 @@ class SyncScreen extends ConsumerWidget {
             label: 'Syncing',
             value: counts.syncing,
             icon: Icons.sync_rounded,
-            accent: AppColors.peachSoft,
+            accent: AppColors.primarySoft,
             caption: 'In progress',
           ),
         ];
@@ -114,32 +145,44 @@ class SyncScreen extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: Space.sm),
-          Row(
-            children: [
-              Expanded(
-                child: AppSecondaryButton(
-                  key: const Key('retry-failed'),
-                  label: 'Retry failed',
-                  icon: Icons.replay_rounded,
-                  height: 46,
-                  onPressed: counts.failed == 0 || sync.running
-                      ? null
-                      : () => runSyncNow(context, ref, selection: SyncSelection.failedOnly),
-                ),
-              ),
-              const SizedBox(width: Space.sm),
-              Expanded(
-                child: AppSecondaryButton(
-                  key: const Key('refresh-connection'),
-                  label: 'Check connection',
-                  icon: Icons.wifi_tethering_rounded,
-                  height: 46,
-                  variant: AppSecondaryVariant.outline,
-                  loading: status.checking,
-                  onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, c) {
+              final retry = AppSecondaryButton(
+                key: const Key('retry-failed'),
+                label: 'Retry failed',
+                icon: Icons.replay_rounded,
+                height: 46,
+                onPressed: counts.failed == 0 || sync.running
+                    ? null
+                    : () => runSyncNow(context, ref, selection: SyncSelection.failedOnly),
+              );
+              final check = AppSecondaryButton(
+                key: const Key('refresh-connection'),
+                label: 'Check connection',
+                icon: Icons.wifi_tethering_rounded,
+                height: 46,
+                variant: AppSecondaryVariant.outline,
+                loading: status.checking,
+                onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
+              );
+              // Side by side only when both labels fit without truncation.
+              if (c.maxWidth < 400) {
+                return Column(
+                  children: [
+                    retry,
+                    const SizedBox(height: Space.sm),
+                    check,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: retry),
+                  const SizedBox(width: Space.sm),
+                  Expanded(child: check),
+                ],
+              );
+            },
           ),
           if (!ref.watch(settingsProvider).autoSync) ...[
             const SizedBox(height: Space.sm),
@@ -226,6 +269,7 @@ class SyncScreen extends ConsumerWidget {
               subtitle: 'Upload employees saved on this device to the server.',
             ),
             if (offline != null) ...[offline, gap],
+            if (!wide) ...[actions, gap],
             stats,
             gap,
             if (wide)
@@ -238,11 +282,9 @@ class SyncScreen extends ConsumerWidget {
                 ],
               )
             else ...[
-              connection,
-              gap,
-              actions,
-              gap,
               pendingList,
+              gap,
+              connection,
               gap,
               historyCard,
             ],

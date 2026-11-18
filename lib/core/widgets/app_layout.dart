@@ -46,16 +46,16 @@ class AppSectionHeader extends StatelessWidget {
           if (actionLabel != null && onAction != null)
             TextButton(
               onPressed: onAction,
-              style: TextButton.styleFrom(foregroundColor: AppColors.peach),
+              style: TextButton.styleFrom(foregroundColor: context.palette.accent),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     actionLabel!,
-                    style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w600),
+                    style: t.labelMedium?.copyWith(color: context.palette.accent, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 2),
-                  const Icon(Icons.chevron_right_rounded, size: 18),
+                  Icon(Icons.chevron_right_rounded, size: 18, color: context.palette.accent),
                 ],
               ),
             ),
@@ -139,7 +139,7 @@ class AppBackgroundDecor extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(child: ColoredBox(color: p.background)),
-        Positioned(top: -120, right: -80, child: _blob(280, AppColors.peach.withValues(alpha: 0.10))),
+        Positioned(top: -120, right: -80, child: _blob(280, AppColors.primary.withValues(alpha: 0.10))),
         Positioned(bottom: -140, left: -100, child: _blob(320, p.backgroundAlt.withValues(alpha: 0.9))),
         Positioned.fill(child: child),
       ],

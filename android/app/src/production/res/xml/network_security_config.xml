@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production: HTTPS everywhere, with ONE temporary exception for the SNOWTEX
+  server, which currently only serves plain HTTP. Remove the domain-config
+  as soon as the server has TLS; the app also refuses to start a production
+  build against HTTP unless ALLOW_INSECURE_PRODUCTION=true is passed.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">27.147.174.107</domain>
+    </domain-config>
+</network-security-config>

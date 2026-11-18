@@ -53,8 +53,8 @@ class DiagnosticsScreen extends ConsumerWidget {
                 child: const TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  indicatorColor: AppColors.peach,
-                  labelColor: AppColors.peach,
+                  indicatorColor: AppColors.primary,
+                  labelColor: AppColors.primary,
                   tabs: [
                     Tab(text: 'Network'),
                     Tab(text: 'Sync log'),
@@ -109,7 +109,7 @@ class _NetworkTab extends ConsumerWidget {
             Card(
               margin: const EdgeInsets.only(bottom: Space.xs),
               child: ExpansionTile(
-                leading: Text(e.method, style: t.labelLarge?.copyWith(color: AppColors.peach)),
+                leading: Text(e.method, style: t.labelLarge?.copyWith(color: AppColors.primary)),
                 title: Text(e.url, maxLines: 2, overflow: TextOverflow.ellipsis, style: t.bodySmall),
                 subtitle: Text(
                   '${e.status ?? e.error ?? '—'} · ${e.durationMs ?? '?'} ms · ${Fmt.time(e.startedAt)}',
@@ -213,10 +213,7 @@ class _DataTab extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: Space.xs),
             child: ExpansionTile(
               title: Text(e.name, style: t.labelLarge),
-              subtitle: Text(
-                '${e.syncStatus.code}${e.needsReconciliation ? ' · NEEDS_REVIEW' : ''}${e.isTestData ? ' · TEST' : ''}',
-                style: t.labelSmall,
-              ),
+              subtitle: Text('${e.syncStatus.code}${e.isTestData ? ' · TEST' : ''}', style: t.labelSmall),
               childrenPadding: const EdgeInsets.all(Space.md),
               children: [
                 SelectableText(

@@ -12,7 +12,7 @@ import '../providers/environment_providers.dart';
 Color environmentColor(EnvironmentConfig env) {
   if (env.isProduction) return AppColors.success;
   return switch (env.environmentId) {
-    'local' => AppColors.peach,
+    'local' => AppColors.primary,
     'development' => AppColors.info,
     'qa' => AppColors.warning,
     _ => AppColors.muted,

@@ -33,6 +33,7 @@ class ApiClient {
     bool logRequests = false,
   }) : _authHeader = authHeader,
        dio = dio ?? Dio() {
+    csrf = CsrfInterceptor(this.dio);
     this.dio.options
       ..baseUrl = environment.apiBaseUrl
       ..connectTimeout = const Duration(seconds: 10)
@@ -46,7 +47,7 @@ class ApiClient {
       ..extra['withCredentials'] = true;
     this.dio.interceptors.addAll([
       if (authHeader != null) AuthHeaderInterceptor(authHeader),
-      CsrfInterceptor(this.dio),
+      csrf,
       if (onUnauthorized != null) UnauthorizedInterceptor(onUnauthorized),
       if (onReachable != null || onUnreachable != null)
         ConnectionTrackingInterceptor(onReachable: onReachable ?? () {}, onUnreachable: onUnreachable ?? (_) {}),
@@ -57,6 +58,9 @@ class ApiClient {
   final EnvironmentConfig environment;
   final Dio dio;
   final AuthHeaderProvider? _authHeader;
+
+  /// Spring Security CSRF state for this client (environment).
+  late final CsrfInterceptor csrf;
 
   /// Headers for requests made outside Dio (e.g. `Image.network`).
   Map<String, String> get imageHeaders => _authHeader?.call() ?? const {};

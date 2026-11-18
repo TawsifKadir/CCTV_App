@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/brand_surface.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
@@ -146,14 +148,30 @@ class _EmptyPhoto extends StatelessWidget {
       padding: const EdgeInsets.all(Space.lg),
       child: Column(
         children: [
+          // Gradient ring around the placeholder draws the eye to step 1.
           Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
-            child: const Icon(Icons.face_retouching_natural_rounded, size: 44, color: AppColors.peach),
+            width: 104,
+            height: 104,
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(gradient: AppColors.actionGradient, shape: BoxShape.circle),
+            child: Container(
+              decoration: BoxDecoration(color: p.card, shape: BoxShape.circle),
+              padding: const EdgeInsets.all(5),
+              child: Container(
+                decoration: BoxDecoration(color: p.accentTint, shape: BoxShape.circle),
+                child: Icon(Icons.portrait_rounded, size: 42, color: context.palette.accent),
+              ),
+            ),
           ),
           const SizedBox(height: Space.md),
-          Text('Employee photograph', style: t.titleMedium),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const StepBadge(1),
+              const SizedBox(width: Space.xs),
+              Flexible(child: Text('Employee photograph', style: t.titleMedium)),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(
             'A clear, front-facing photo. The server creates the face template from it.',
@@ -161,28 +179,40 @@ class _EmptyPhoto extends StatelessWidget {
             style: t.bodySmall?.copyWith(color: p.textMuted),
           ),
           const SizedBox(height: Space.lg),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: Space.sm,
-            runSpacing: Space.sm,
-            children: [
-              AppPrimaryButton(
+          // Equal-width buttons: stacked on narrow cards, side by side otherwise.
+          LayoutBuilder(
+            builder: (context, c) {
+              final camera = AppPrimaryButton(
                 key: const Key('photo-camera'),
                 label: 'Take photo',
                 icon: Icons.photo_camera_outlined,
-                expand: false,
                 height: 48,
                 onPressed: enabled ? onCamera : null,
-              ),
-              AppSecondaryButton(
+              );
+              final upload = AppSecondaryButton(
                 key: const Key('photo-upload'),
                 label: 'Upload photo',
                 icon: Icons.upload_rounded,
-                expand: false,
                 height: 48,
                 onPressed: enabled ? onUpload : null,
-              ),
-            ],
+              );
+              if (c.maxWidth < 380) {
+                return Column(
+                  children: [
+                    camera,
+                    const SizedBox(height: Space.sm),
+                    upload,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: camera),
+                  const SizedBox(width: Space.sm),
+                  Expanded(child: upload),
+                ],
+              );
+            },
           ),
           const SizedBox(height: Space.md),
           Text('JPEG or PNG · up to 10 MB', style: t.labelSmall),

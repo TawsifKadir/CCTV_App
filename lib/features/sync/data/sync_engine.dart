@@ -105,7 +105,7 @@ class SyncEngine {
         await local.update(
           e.localId,
           (x) => x.copyWith(
-            syncStatus: SyncStatus.failed,
+            syncStatus: SyncStatus.reconciliationRequired,
             needsReconciliation: true,
             syncError: () => 'The upload was interrupted. The server will be checked before retrying.',
           ),
@@ -125,12 +125,16 @@ class SyncEngine {
     if (e.isTestData || !e.isUnsynced || _inFlight.contains(e.localId)) return false;
     switch (s) {
       case SyncSelection.failedOnly:
-        return e.syncStatus == SyncStatus.failed;
+        return e.syncStatus == SyncStatus.failed || e.syncStatus == SyncStatus.reconciliationRequired;
       case SyncSelection.manual:
         return !e.permanentFailure;
       case SyncSelection.automatic:
         if (e.permanentFailure) return false;
-        if (e.syncStatus == SyncStatus.failed) return e.nextRetryAt == null || !now.isBefore(e.nextRetryAt!);
+        // Review records are only reconciled (searched for) before any
+        // upload, so they can join automatic runs once their backoff passes.
+        if (e.syncStatus == SyncStatus.failed || e.syncStatus == SyncStatus.reconciliationRequired) {
+          return e.nextRetryAt == null || !now.isBefore(e.nextRetryAt!);
+        }
         return true;
     }
   }
@@ -259,7 +263,7 @@ class SyncEngine {
     }
 
     // 1. Uncertain previous attempt: look for it on the server first.
-    if (e.needsReconciliation) {
+    if (e.syncStatus == SyncStatus.reconciliationRequired || e.needsReconciliation) {
       try {
         final match = await findOnServer(e);
         if (match != null) {
@@ -345,7 +349,7 @@ class SyncEngine {
       final r = await local.update(
         localId,
         (x) => x.copyWith(
-          syncStatus: SyncStatus.failed,
+          syncStatus: SyncStatus.reconciliationRequired,
           needsReconciliation: true,
           nextRetryAt: () => now.add(retryDelay(x.attempts)),
           syncError: () =>
