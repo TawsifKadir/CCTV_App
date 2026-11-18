@@ -1,89 +1,65 @@
-import 'dart:convert';
-
 import 'package:hive_ce/hive.dart';
 
+import '../../features/authentication/data/auth_api_service.dart';
+import '../../features/authentication/data/auth_session.dart';
+import '../../features/authentication/data/session_store.dart';
 import '../models/activity.dart';
-import '../models/operator.dart';
-import '../remote/api_contracts.dart';
 import 'activity_repository.dart';
 
-/// Coordinates the auth API with the locally persisted session.
+/// Coordinates the login API with the persisted session.
 ///
-/// Session rules:
-/// * "Remember me" on  -> session survives app restarts.
-/// * "Remember me" off -> session is discarded on the next cold start.
+/// * "Remember me" on  → the session (token/cookie) is kept in secure
+///   storage and restored on the next launch.
+/// * "Remember me" off → the session lives in memory only.
+/// Only the username (not the password) is remembered for convenience.
 class AuthRepository {
-  AuthRepository({
-    required AuthApi api,
-    required Box<dynamic> sessionBox,
-    required ActivityRepository activity,
-  })  : _api = api,
-        _session = sessionBox,
-        _activity = activity;
+  AuthRepository({required SessionStore store, required Box<dynamic> prefs, required ActivityRepository activity})
+    : _store = store,
+      _prefs = prefs,
+      _activity = activity;
 
-  final AuthApi _api;
-  final Box<dynamic> _session;
+  final SessionStore _store;
+  final Box<dynamic> _prefs;
   final ActivityRepository _activity;
+  static const _kUsername = 'remembered_username';
 
-  static const _kOperator = 'operator';
-  static const _kPersistent = 'persistent';
-  static const _kRememberedEmail = 'remembered_email';
+  String? get rememberedUsername => _prefs.get(_kUsername) as String?;
 
-  /// Restores the session at startup (call once before building the UI).
-  Future<Operator?> restoreSession() async {
-    final raw = _session.get(_kOperator);
-    if (raw is! String) return null;
-    final persistent = _session.get(_kPersistent) as bool? ?? false;
-    if (!persistent) {
-      await _session.delete(_kOperator);
+  /// Restores a remembered session if it is still usable for
+  /// [environmentId]. There is no server endpoint to validate it, so an
+  /// invalid session is detected by the first 401 response instead.
+  Future<AuthSession?> checkAuthenticationStatus(String environmentId) async {
+    final s = await _store.read();
+    if (s == null) return null;
+    if (s.isExpired() || s.environmentId != environmentId) {
+      await _store.clear();
       return null;
     }
-    try {
-      return Operator.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
-    } catch (_) {
-      await _session.delete(_kOperator);
-      return null;
-    }
+    return s;
   }
 
-  String? get rememberedEmail => _session.get(_kRememberedEmail) as String?;
-
-  Future<Operator> login(String email, String password, {required bool remember}) async {
-    final op = await _api.login(email.trim(), password);
-    await _persist(op, remember: remember);
-    await _activity.log(ActivityType.login, '${op.fullName} signed in');
-    return op;
+  Future<AuthSession> login(AuthApiService api, String username, String password, {required bool remember}) async {
+    final session = await api.login(username.trim(), password);
+    await persistAuthenticationSession(session, remember: remember);
+    await _activity.log(
+      ActivityType.login,
+      '${session.operator.fullName} signed in',
+      environmentId: session.environmentId,
+    );
+    return session;
   }
 
-  Future<Operator> register(RegisterRequest request) async {
-    final op = await _api.register(request);
-    await _persist(op, remember: true);
-    await _activity.log(ActivityType.registered, 'Operator account created',
-        subtitle: op.fullName);
-    return op;
-  }
-
-  Future<void> requestPasswordReset(String email) => _api.requestPasswordReset(email);
-
-  Future<Operator> updateProfile(Operator op) async {
-    final updated = await _api.updateProfile(op);
-    final persistent = _session.get(_kPersistent) as bool? ?? true;
-    await _persist(updated, remember: persistent);
-    return updated;
-  }
-
-  Future<void> logout() async {
-    await _session.delete(_kOperator);
-    await _session.delete(_kPersistent);
-  }
-
-  Future<void> _persist(Operator op, {required bool remember}) async {
-    await _session.put(_kOperator, jsonEncode(op.toJson()));
-    await _session.put(_kPersistent, remember);
+  Future<void> persistAuthenticationSession(AuthSession session, {required bool remember}) async {
     if (remember) {
-      await _session.put(_kRememberedEmail, op.email);
+      await _store.write(session);
+      await _prefs.put(_kUsername, session.operator.username);
     } else {
-      await _session.delete(_kRememberedEmail);
+      await _store.clear();
+      await _prefs.delete(_kUsername);
     }
   }
+
+  /// Client-side logout: forgets the token/cookie. The backend has no logout
+  /// endpoint, so a server-side session is not invalidated by this.
+  Future<void> logout() => _store.clear();
 }

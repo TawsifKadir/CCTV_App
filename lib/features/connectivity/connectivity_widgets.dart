@@ -7,11 +7,11 @@ import '../../core/utils/formatters.dart';
 import 'connectivity_service.dart';
 
 (Color, IconData) networkStatusStyle(NetworkStatus s) => switch (s) {
-      NetworkStatus.online => (AppColors.success, Icons.cloud_done_rounded),
-      NetworkStatus.offline => (AppColors.error, Icons.wifi_off_rounded),
-      NetworkStatus.serverUnavailable => (AppColors.warning, Icons.cloud_off_rounded),
-      NetworkStatus.checking => (AppColors.muted, Icons.sync_rounded),
-    };
+  NetworkStatus.online => (AppColors.success, Icons.cloud_done_rounded),
+  NetworkStatus.offline => (AppColors.error, Icons.wifi_off_rounded),
+  NetworkStatus.serverUnavailable => (AppColors.warning, Icons.cloud_off_rounded),
+  NetworkStatus.checking => (AppColors.muted, Icons.sync_rounded),
+};
 
 /// Compact "Online / Offline / Server unavailable / Checking" pill. Updates
 /// automatically; rebuilds only when the visible status changes.
@@ -45,7 +45,10 @@ class ConnectivityPill extends ConsumerWidget {
             Icon(icon, size: 14, color: onDark ? color : context.onTint(color)),
             if (!compact) ...[
               const SizedBox(width: 5),
-              Text(status.label, style: t.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+              Text(
+                status.label,
+                style: t.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w700),
+              ),
             ],
           ],
         ),

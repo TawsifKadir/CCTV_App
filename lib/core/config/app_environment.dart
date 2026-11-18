@@ -55,9 +55,9 @@ class BuildEnvironment {
 
   /// Registered but unconfigured environments (shown greyed out).
   List<EnvironmentConfig> unconfigured({PlatformInfo? platform}) => [
-        for (final e in EnvironmentRegistry.all(platform: platform, localHostOverride: BuildDefines.localApiHost))
-          if (!e.isConfigured) e,
-      ];
+    for (final e in EnvironmentRegistry.all(platform: platform, localHostOverride: BuildDefines.localApiHost))
+      if (!e.isConfigured) e,
+  ];
 
   EnvironmentConfig? byId(String id) {
     for (final e in available) {
@@ -99,8 +99,8 @@ BuildEnvironment resolveBuildEnvironment({
   final (String id, EnvironmentSource source) = requestedEnv.isNotEmpty
       ? (requestedEnv, EnvironmentSource.dartDefine)
       : requestedFlavor.isNotEmpty
-          ? (requestedFlavor, EnvironmentSource.flavor)
-          : ('local', EnvironmentSource.defaultLocal);
+      ? (requestedFlavor, EnvironmentSource.flavor)
+      : ('local', EnvironmentSource.defaultLocal);
 
   final def = EnvironmentRegistry.definitionFor(id);
   if (def == null) {
@@ -132,10 +132,5 @@ BuildEnvironment resolveBuildEnvironment({
         ]
       : [config];
 
-  return BuildEnvironment(
-    config: config,
-    source: source,
-    runtimeSwitchingAllowed: switching,
-    available: available,
-  );
+  return BuildEnvironment(config: config, source: source, runtimeSwitchingAllowed: switching, available: available);
 }

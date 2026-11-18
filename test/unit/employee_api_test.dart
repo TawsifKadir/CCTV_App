@@ -28,11 +28,11 @@ void main() {
   });
 
   EmployeeRegistration registration({EmployeePhoto? photo, DateTime? dob}) => EmployeeRegistration(
-        name: '  Amina Rahman ',
-        dateOfBirth: dob ?? DateTime(1998, 5, 2),
-        designation: 'Software Engineer',
-        photo: photo ?? EmployeePhoto.fromBytes(fakeJpeg(), origin: PhotoOrigin.upload),
-      );
+    name: '  Amina Rahman ',
+    dateOfBirth: dob ?? DateTime(1998, 5, 2),
+    designation: 'Software Engineer',
+    photo: photo ?? EmployeePhoto.fromBytes(fakeJpeg(), origin: PhotoOrigin.upload),
+  );
 
   group('POST /api/employee/add', () {
     test('sends multipart/form-data with the exact EmployeeForm field names', () async {
@@ -43,11 +43,10 @@ void main() {
       expect(req.headers[Headers.contentTypeHeader].toString(), startsWith('multipart/form-data; boundary='));
 
       final form = req.data as FormData;
-      expect({for (final f in form.fields) f.key: f.value}, {
-        'name': 'Amina Rahman',
-        'dateOfBirth': '1998-05-02',
-        'designation': 'Software Engineer',
-      });
+      expect(
+        {for (final f in form.fields) f.key: f.value},
+        {'name': 'Amina Rahman', 'dateOfBirth': '1998-05-02', 'designation': 'Software Engineer'},
+      );
       expect(form.files.map((f) => f.key), ['photo']);
       expect(form.fields.map((f) => f.key), isNot(contains(anyOf('fullName', 'dob', 'image', 'employeePhoto'))));
     });
@@ -82,11 +81,11 @@ void main() {
 
     test('liveWatchList:false is still a successful registration, with its warning', () async {
       backend.handler = (_) => json(201, {
-            'id': 7,
-            'name': 'Amina Rahman',
-            'liveWatchList': false,
-            'warning': 'Employee saved. Recognition will be available when the engine starts.',
-          });
+        'id': 7,
+        'name': 'Amina Rahman',
+        'liveWatchList': false,
+        'warning': 'Employee saved. Recognition will be available when the engine starts.',
+      });
       final r = await api.registerEmployee(registration());
       expect(r.statusCode, 201);
       expect(r.employee?.id, 7);
@@ -100,7 +99,10 @@ void main() {
       expect(empty.employee, isNull);
       expect(empty.recognitionDelayed, isFalse);
 
-      backend.handler = (_) => json(201, {'liveWatchList': 'false', 'unknown': [1, 2]});
+      backend.handler = (_) => json(201, {
+        'liveWatchList': 'false',
+        'unknown': [1, 2],
+      });
       final odd = await api.registerEmployee(registration());
       expect(odd.liveWatchList, isFalse);
     });
@@ -109,9 +111,11 @@ void main() {
       backend.handler = (_) => json(400, {'error': 'Enter a valid date of birth.'});
       await expectLater(
         api.registerEmployee(registration()),
-        throwsA(isA<ApiException>()
-            .having((e) => e.statusCode, 'status', 400)
-            .having((e) => e.message, 'message', 'Enter a valid date of birth.')),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'status', 400)
+              .having((e) => e.message, 'message', 'Enter a valid date of birth.'),
+        ),
       );
     });
 
@@ -143,14 +147,14 @@ void main() {
   group('GET /api/employee/list', () {
     test('parses the paginated response into typed models', () async {
       backend.handler = (_) => json(200, {
-            'content': [sampleEmployeeJson(photoUrl: '/api/employee/1/photo')],
-            'page': 0,
-            'size': 24,
-            'totalElements': 100,
-            'totalPages': 5,
-            'hasPrevious': false,
-            'hasNext': true,
-          });
+        'content': [sampleEmployeeJson(photoUrl: '/api/employee/1/photo')],
+        'page': 0,
+        'size': 24,
+        'totalElements': 100,
+        'totalPages': 5,
+        'hasPrevious': false,
+        'hasNext': true,
+      });
       final page = await api.getEmployees(const EmployeeQuery());
       expect(page.totalElements, 100);
       expect(page.totalPages, 5);
@@ -177,7 +181,9 @@ void main() {
     });
 
     test('pagination, search and source filter map to query parameters', () async {
-      await api.getEmployees(const EmployeeQuery(page: 3, size: 24, query: '  Engineer ', source: EnrollmentSource.capture));
+      await api.getEmployees(
+        const EmployeeQuery(page: 3, size: 24, query: '  Engineer ', source: EnrollmentSource.capture),
+      );
       expect(backend.last.uri.queryParameters, {'page': '3', 'size': '24', 'query': 'Engineer', 'source': 'capture'});
       await api.getEmployees(const EmployeeQuery(source: EnrollmentSource.photo));
       expect(backend.last.uri.queryParameters['source'], 'photo');
@@ -208,16 +214,22 @@ void main() {
 
     test('invalid JSON and wrong shapes are reported, not crashed on', () async {
       backend.handler = (_) => text(200, '<html>oops</html>');
-      await expectLater(api.getEmployees(const EmployeeQuery()),
-          throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.invalidResponse)));
+      await expectLater(
+        api.getEmployees(const EmployeeQuery()),
+        throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.invalidResponse)),
+      );
 
       backend.handler = (_) => json(200, null);
-      await expectLater(api.getEmployees(const EmployeeQuery()),
-          throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.emptyResponse)));
+      await expectLater(
+        api.getEmployees(const EmployeeQuery()),
+        throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.emptyResponse)),
+      );
 
       backend.handler = (_) => json(200, [1, 2, 3]);
-      await expectLater(api.getEmployees(const EmployeeQuery()),
-          throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.invalidResponse)));
+      await expectLater(
+        api.getEmployees(const EmployeeQuery()),
+        throwsA(isA<ApiException>().having((e) => e.kind, 'kind', ApiErrorKind.invalidResponse)),
+      );
     });
   });
 
@@ -236,31 +248,42 @@ void main() {
         backend.handler = (_) => text(status, '');
         await expectLater(
           api.getEmployees(const EmployeeQuery()),
-          throwsA(isA<ApiException>()
-              .having((e) => e.kind, 'kind', kind)
-              .having((e) => e.message, 'message', isNot(contains('Exception')))),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.kind, 'kind', kind)
+                .having((e) => e.message, 'message', isNot(contains('Exception'))),
+          ),
         );
       });
     }
 
     test("Spring's default error document uses `message`, not the reason phrase", () {
       expect(
-        ApiException.serverMessage({'timestamp': 'x', 'status': 400, 'error': 'Bad Request', 'message': 'Bad size'}),
+        ApiException.messageFromBody({'timestamp': 'x', 'status': 400, 'error': 'Bad Request', 'message': 'Bad size'}),
         'Bad size',
       );
-      expect(ApiException.serverMessage({'timestamp': 'x', 'status': 500, 'error': 'Internal Server Error'}), isNull);
-      expect(ApiException.serverMessage('{"error":"Upload a JPEG or PNG photo up to 10 MB."}'),
-          'Upload a JPEG or PNG photo up to 10 MB.');
-      expect(ApiException.serverMessage('<html>stack trace</html>'), isNull);
+      expect(ApiException.messageFromBody({'timestamp': 'x', 'status': 500, 'error': 'Internal Server Error'}), isNull);
+      expect(
+        ApiException.messageFromBody('{"error":"Upload a JPEG or PNG photo up to 10 MB."}'),
+        'Upload a JPEG or PNG photo up to 10 MB.',
+      );
+      expect(ApiException.messageFromBody('<html>stack trace</html>'), isNull);
     });
 
     test('connection refused, DNS failures and timeouts are distinguished', () {
-      DioException err(DioExceptionType type, [Object? error]) =>
-          DioException(requestOptions: RequestOptions(baseUrl: 'http://localhost:8080'), type: type, error: error);
-      expect(ApiException.fromDio(err(DioExceptionType.connectionError, 'SocketException: Connection refused')).kind,
-          ApiErrorKind.connectionRefused);
-      expect(ApiException.fromDio(err(DioExceptionType.connectionError, 'Failed host lookup: qa.example')).kind,
-          ApiErrorKind.dns);
+      DioException err(DioExceptionType type, [Object? error]) => DioException(
+        requestOptions: RequestOptions(baseUrl: 'http://localhost:8080'),
+        type: type,
+        error: error,
+      );
+      expect(
+        ApiException.fromDio(err(DioExceptionType.connectionError, 'SocketException: Connection refused')).kind,
+        ApiErrorKind.connectionRefused,
+      );
+      expect(
+        ApiException.fromDio(err(DioExceptionType.connectionError, 'Failed host lookup: qa.example')).kind,
+        ApiErrorKind.dns,
+      );
       expect(ApiException.fromDio(err(DioExceptionType.receiveTimeout)).kind, ApiErrorKind.timeout);
       expect(ApiException.fromDio(err(DioExceptionType.connectionTimeout)).kind, ApiErrorKind.timeout);
       final refused = ApiException.fromDio(err(DioExceptionType.connectionError, 'Connection refused'));
@@ -278,11 +301,9 @@ void main() {
     });
 
     test('a different environment yields a different image source', () {
-      final qa = serviceFor(const EnvironmentConfig(
-        environmentId: 'qa',
-        environmentName: 'QA',
-        baseUrl: 'https://qa.example.com/',
-      ));
+      final qa = serviceFor(
+        const EnvironmentConfig(environmentId: 'qa', environmentName: 'QA', baseUrl: 'https://qa.example.com/'),
+      );
       expect(qa.resolvePhotoUrl('/api/employee/1/photo'), 'https://qa.example.com/api/employee/1/photo');
     });
 
@@ -314,7 +335,9 @@ void main() {
       final repo = EmployeeRepository(api: api);
       expect(repo.cacheKeyFor(const EmployeeQuery()), startsWith('local|'));
       final qaRepo = EmployeeRepository(
-        api: serviceFor(const EnvironmentConfig(environmentId: 'qa', environmentName: 'QA', baseUrl: 'https://qa.example.com')),
+        api: serviceFor(
+          const EnvironmentConfig(environmentId: 'qa', environmentName: 'QA', baseUrl: 'https://qa.example.com'),
+        ),
       );
       expect(qaRepo.cacheKeyFor(const EmployeeQuery()), startsWith('qa|'));
       expect(qaRepo.cacheKeyFor(const EmployeeQuery()), isNot(repo.cacheKeyFor(const EmployeeQuery())));

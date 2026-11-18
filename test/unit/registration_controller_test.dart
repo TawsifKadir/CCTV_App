@@ -38,11 +38,11 @@ void main() {
 
   test('liveWatchList:false is treated as success with a warning', () async {
     env.backend.handler = (_) => json(201, {
-          'id': 9,
-          'name': 'Amina Rahman',
-          'liveWatchList': false,
-          'warning': 'Employee saved. Restart the application to load this identity for recognition.',
-        });
+      'id': 9,
+      'name': 'Amina Rahman',
+      'liveWatchList': false,
+      'warning': 'Employee saved. Restart the application to load this identity for recognition.',
+    });
     final outcome = await env.read(registrationControllerProvider.notifier).submit(registration);
     expect(outcome, isNotNull, reason: 'watch-list warnings must not fail the registration');
     expect(outcome!.result!.recognitionDelayed, isTrue);
@@ -75,7 +75,10 @@ void main() {
     await env.read(serverPageProvider.future);
     final paths = env.backend.requests.map((r) => r.path).toList();
     final post = paths.indexWhere((p) => p.endsWith('/employee/add'));
-    expect(paths.lastIndexWhere((p) => p.endsWith('/employee/list')), greaterThan(post),
-        reason: 'the list is fetched again from the server after registering');
+    expect(
+      paths.lastIndexWhere((p) => p.endsWith('/employee/list')),
+      greaterThan(post),
+      reason: 'the list is fetched again from the server after registering',
+    );
   });
 }

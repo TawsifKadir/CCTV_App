@@ -3,6 +3,12 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
+  /// POST application/json: {"username", "password"}.
+  static const authLogin = '/auth/login';
+
+  /// POST → {"signedOut": true}
+  static const authLogout = '/auth/logout';
+
   /// POST multipart/form-data: name, dateOfBirth, designation, photo.
   static const employeeAdd = '/employee/add';
 

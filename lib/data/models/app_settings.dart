@@ -40,42 +40,41 @@ class AppSettings {
     bool? autoSync,
     bool? syncOnWifiOnly,
     int? connectionCheckSeconds,
-  }) =>
-      AppSettings(
-        themeMode: themeMode ?? this.themeMode,
-        reduceMotion: reduceMotion ?? this.reduceMotion,
-        preferFrontCamera: preferFrontCamera ?? this.preferFrontCamera,
-        selectedEnvironmentId: selectedEnvironmentId == null ? this.selectedEnvironmentId : selectedEnvironmentId(),
-        autoSync: autoSync ?? this.autoSync,
-        syncOnWifiOnly: syncOnWifiOnly ?? this.syncOnWifiOnly,
-        connectionCheckSeconds: connectionCheckSeconds ?? this.connectionCheckSeconds,
-      );
+  }) => AppSettings(
+    themeMode: themeMode ?? this.themeMode,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
+    preferFrontCamera: preferFrontCamera ?? this.preferFrontCamera,
+    selectedEnvironmentId: selectedEnvironmentId == null ? this.selectedEnvironmentId : selectedEnvironmentId(),
+    autoSync: autoSync ?? this.autoSync,
+    syncOnWifiOnly: syncOnWifiOnly ?? this.syncOnWifiOnly,
+    connectionCheckSeconds: connectionCheckSeconds ?? this.connectionCheckSeconds,
+  );
 
   // `themePreference` replaces the old `themeMode` key, whose default was
   // light: existing installs therefore start following the system theme.
   Map<String, dynamic> toJson() => {
-        'themePreference': themeMode.name,
-        'reduceMotion': reduceMotion,
-        'preferFrontCamera': preferFrontCamera,
-        'selectedEnvironmentId': selectedEnvironmentId,
-        'autoSync': autoSync,
-        'syncOnWifiOnly': syncOnWifiOnly,
-        'connectionCheckSeconds': connectionCheckSeconds,
-      };
+    'themePreference': themeMode.name,
+    'reduceMotion': reduceMotion,
+    'preferFrontCamera': preferFrontCamera,
+    'selectedEnvironmentId': selectedEnvironmentId,
+    'autoSync': autoSync,
+    'syncOnWifiOnly': syncOnWifiOnly,
+    'connectionCheckSeconds': connectionCheckSeconds,
+  };
 
   factory AppSettings.fromJson(Map<String, dynamic> j) {
     const d = AppSettings();
     return AppSettings(
-      themeMode: ThemeMode.values.firstWhere(
-        (m) => m.name == j['themePreference'],
-        orElse: () => d.themeMode,
-      ),
+      themeMode: ThemeMode.values.firstWhere((m) => m.name == j['themePreference'], orElse: () => d.themeMode),
       reduceMotion: j['reduceMotion'] as bool? ?? d.reduceMotion,
       preferFrontCamera: j['preferFrontCamera'] as bool? ?? d.preferFrontCamera,
       selectedEnvironmentId: j['selectedEnvironmentId'] as String?,
       autoSync: j['autoSync'] as bool? ?? d.autoSync,
       syncOnWifiOnly: j['syncOnWifiOnly'] as bool? ?? d.syncOnWifiOnly,
-      connectionCheckSeconds: ((j['connectionCheckSeconds'] as num?)?.toInt() ?? d.connectionCheckSeconds).clamp(10, 600),
+      connectionCheckSeconds: ((j['connectionCheckSeconds'] as num?)?.toInt() ?? d.connectionCheckSeconds).clamp(
+        10,
+        600,
+      ),
     );
   }
 }

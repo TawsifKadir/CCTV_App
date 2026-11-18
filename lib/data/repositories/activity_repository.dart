@@ -13,24 +13,19 @@ class ActivityRepository {
 
   Stream<void> get changes => _store.changes;
 
-  List<Activity> getAll() =>
-      _store.getAll()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  List<Activity> getAll() => _store.getAll()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-  Future<void> log(
-    ActivityType type,
-    String title, {
-    String? subtitle,
-    String? environmentId,
-    DateTime? at,
-  }) async {
-    await _store.put(Activity(
-      id: _uuid.v4(),
-      type: type,
-      title: title,
-      subtitle: subtitle,
-      timestamp: at ?? DateTime.now(),
-      environmentId: environmentId,
-    ));
+  Future<void> log(ActivityType type, String title, {String? subtitle, String? environmentId, DateTime? at}) async {
+    await _store.put(
+      Activity(
+        id: _uuid.v4(),
+        type: type,
+        title: title,
+        subtitle: subtitle,
+        timestamp: at ?? DateTime.now(),
+        environmentId: environmentId,
+      ),
+    );
     await _trim();
   }
 

@@ -26,11 +26,11 @@ class SyncRecordLog {
 
   Map<String, dynamic> toJson() => {'localId': localId, 'name': name, 'outcome': outcome, 'detail': detail};
   factory SyncRecordLog.fromJson(Map<String, dynamic> j) => SyncRecordLog(
-        localId: j['localId'] as String? ?? '',
-        name: j['name'] as String? ?? '',
-        outcome: j['outcome'] as String? ?? '',
-        detail: j['detail'] as String?,
-      );
+    localId: j['localId'] as String? ?? '',
+    name: j['name'] as String? ?? '',
+    outcome: j['outcome'] as String? ?? '',
+    detail: j['detail'] as String?,
+  );
 }
 
 /// Summary of one synchronization run.
@@ -83,39 +83,39 @@ class SyncRun {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'environmentId': environmentId,
-        'trigger': trigger.name,
-        'startedAt': startedAt.toIso8601String(),
-        'finishedAt': finishedAt.toIso8601String(),
-        'attempted': attempted,
-        'uploaded': uploaded,
-        'failed': failed,
-        'alreadySynced': alreadySynced,
-        'uncertain': uncertain,
-        'aborted': aborted,
-        'message': message,
-        'records': [for (final r in records) r.toJson()],
-      };
+    'id': id,
+    'environmentId': environmentId,
+    'trigger': trigger.name,
+    'startedAt': startedAt.toIso8601String(),
+    'finishedAt': finishedAt.toIso8601String(),
+    'attempted': attempted,
+    'uploaded': uploaded,
+    'failed': failed,
+    'alreadySynced': alreadySynced,
+    'uncertain': uncertain,
+    'aborted': aborted,
+    'message': message,
+    'records': [for (final r in records) r.toJson()],
+  };
 
   factory SyncRun.fromJson(Map<String, dynamic> j) => SyncRun(
-        id: j['id'] as String,
-        environmentId: j['environmentId'] as String? ?? '',
-        trigger: SyncTrigger.values.firstWhere((t) => t.name == j['trigger'], orElse: () => SyncTrigger.manual),
-        startedAt: DateTime.parse(j['startedAt'] as String),
-        finishedAt: DateTime.parse(j['finishedAt'] as String),
-        attempted: j['attempted'] as int? ?? 0,
-        uploaded: j['uploaded'] as int? ?? 0,
-        failed: j['failed'] as int? ?? 0,
-        alreadySynced: j['alreadySynced'] as int? ?? 0,
-        uncertain: j['uncertain'] as int? ?? 0,
-        aborted: j['aborted'] as bool? ?? false,
-        message: j['message'] as String?,
-        records: [
-          for (final r in (j['records'] as List? ?? const []))
-            if (r is Map) SyncRecordLog.fromJson(Map<String, dynamic>.from(r)),
-        ],
-      );
+    id: j['id'] as String,
+    environmentId: j['environmentId'] as String? ?? '',
+    trigger: SyncTrigger.values.firstWhere((t) => t.name == j['trigger'], orElse: () => SyncTrigger.manual),
+    startedAt: DateTime.parse(j['startedAt'] as String),
+    finishedAt: DateTime.parse(j['finishedAt'] as String),
+    attempted: j['attempted'] as int? ?? 0,
+    uploaded: j['uploaded'] as int? ?? 0,
+    failed: j['failed'] as int? ?? 0,
+    alreadySynced: j['alreadySynced'] as int? ?? 0,
+    uncertain: j['uncertain'] as int? ?? 0,
+    aborted: j['aborted'] as bool? ?? false,
+    message: j['message'] as String?,
+    records: [
+      for (final r in (j['records'] as List? ?? const []))
+        if (r is Map) SyncRecordLog.fromJson(Map<String, dynamic>.from(r)),
+    ],
+  );
 }
 
 class SyncHistoryRepository {

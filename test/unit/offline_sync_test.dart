@@ -16,11 +16,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/test_env.dart';
 
 EmployeeRegistration reg(String name, {String designation = 'Engineer'}) => EmployeeRegistration(
-      name: name,
-      dateOfBirth: DateTime(1995, 3, 14),
-      designation: designation,
-      photo: EmployeePhoto.fromBytes(fakeJpeg(4096), origin: PhotoOrigin.camera),
-    );
+  name: name,
+  dateOfBirth: DateTime(1995, 3, 14),
+  designation: designation,
+  photo: EmployeePhoto.fromBytes(fakeJpeg(4096), origin: PhotoOrigin.camera),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,8 +70,11 @@ void main() {
       expect(e.employeeNo, 1001);
       expect(e.lastSuccessfulSync, isNotNull);
       expect(e.localId, isNot('1'), reason: 'local id is a UUID, never the server id');
-      expect(await env.read(localEmployeeRepositoryProvider).loadPhoto(e.localPhotoReference), isNotNull,
-          reason: 'photo kept on the device after sync');
+      expect(
+        await env.read(localEmployeeRepositoryProvider).loadPhoto(e.localPhotoReference),
+        isNotNull,
+        reason: 'photo kept on the device after sync',
+      );
     });
 
     test('appears once, as an "On server" record linked to its local copy', () async {
@@ -305,7 +308,10 @@ void main() {
       final second = locals().firstWhere((e) => e.needsReconciliation);
       final r = await env.read(syncEngineProvider).syncRecord(second.localId);
       expect(r.outcome, UploadOutcome.alreadySynced);
-      expect(locals().map((e) => e.serverId).toSet(), {1, 2}, reason: 'each local record maps to its own server record');
+      expect(locals().map((e) => e.serverId).toSet(), {
+        1,
+        2,
+      }, reason: 'each local record maps to its own server record');
     });
 
     test('concurrent sync requests share one run and each record is sent once', () async {
@@ -432,8 +438,11 @@ void main() {
       env.read(employeeQueryProvider.notifier).setSource(EnrollmentSource.capture);
       expect(env.read(employeeListingProvider).localRecords, isEmpty);
       env.read(employeeQueryProvider.notifier).setSource(EnrollmentSource.photo);
-      expect(env.read(employeeListingProvider).localRecords, hasLength(1),
-          reason: '/employee/add registrations are recorded by the backend as photo enrolments');
+      expect(
+        env.read(employeeListingProvider).localRecords,
+        hasLength(1),
+        reason: '/employee/add registrations are recorded by the backend as photo enrolments',
+      );
     });
   });
 
@@ -473,8 +482,11 @@ void main() {
       final f = AppFeatures.forBuild(prod, forceClientMode: false);
       expect(f.clientMode, isTrue);
       expect(f.networkInspector || f.environmentConfiguration || f.testDataTools || f.databaseInspector, isFalse);
-      expect(AppFeatures.forBuild(testBuildEnvironment(), forceClientMode: true).clientMode, isTrue,
-          reason: 'CLIENT_MODE previews the client UI on a dev build');
+      expect(
+        AppFeatures.forBuild(testBuildEnvironment(), forceClientMode: true).clientMode,
+        isTrue,
+        reason: 'CLIENT_MODE previews the client UI on a dev build',
+      );
     });
   });
 

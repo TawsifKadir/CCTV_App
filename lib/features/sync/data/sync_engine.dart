@@ -142,7 +142,11 @@ class SyncEngine {
   }
 
   /// Runs a batch. Concurrent calls share the running batch.
-  Future<SyncRun> run(SyncSelection selection, {required SyncTrigger trigger, void Function(SyncProgress)? onProgress}) {
+  Future<SyncRun> run(
+    SyncSelection selection, {
+    required SyncTrigger trigger,
+    void Function(SyncProgress)? onProgress,
+  }) {
     final existing = _running;
     if (existing != null) return existing;
     final f = _runBatch(selection, trigger, onProgress);
@@ -150,7 +154,11 @@ class SyncEngine {
     return f.whenComplete(() => _running = null);
   }
 
-  Future<SyncRun> _runBatch(SyncSelection selection, SyncTrigger trigger, void Function(SyncProgress)? onProgress) async {
+  Future<SyncRun> _runBatch(
+    SyncSelection selection,
+    SyncTrigger trigger,
+    void Function(SyncProgress)? onProgress,
+  ) async {
     final started = _clock();
     final items = candidates(selection);
     var uploaded = 0, failed = 0, already = 0, uncertain = 0;
@@ -171,7 +179,9 @@ class SyncEngine {
         case UploadOutcome.skipped:
           break;
       }
-      logs.add(SyncRecordLog(localId: items[i].localId, name: items[i].name, outcome: r.outcome.name, detail: r.message));
+      logs.add(
+        SyncRecordLog(localId: items[i].localId, name: items[i].name, outcome: r.outcome.name, detail: r.message),
+      );
       if (r.networkDown && i < items.length - 1) {
         aborted = true;
         break;
@@ -209,7 +219,11 @@ class SyncEngine {
     final id = LocalEmployeeRepository.newLocalId();
     _inFlight.add(id);
     try {
-      final record = await local.create(registration, status: upload ? SyncStatus.pendingSync : offlineStatus, localId: id);
+      final record = await local.create(
+        registration,
+        status: upload ? SyncStatus.pendingSync : offlineStatus,
+        localId: id,
+      );
       if (!upload) return RecordSyncResult(UploadOutcome.skipped, record: record);
       return await _sync(id, onSendProgress: onSendProgress);
     } finally {
@@ -233,11 +247,14 @@ class SyncEngine {
     if (e == null) return const RecordSyncResult(UploadOutcome.skipped, message: 'Record not found');
     if (e.syncStatus == SyncStatus.synced) return RecordSyncResult(UploadOutcome.alreadySynced, record: e);
     if (e.isTestData) {
-      final r = await local.update(localId, (x) => x.copyWith(
-            syncStatus: SyncStatus.failed,
-            permanentFailure: true,
-            syncError: () => 'Test data is never uploaded.',
-          ));
+      final r = await local.update(
+        localId,
+        (x) => x.copyWith(
+          syncStatus: SyncStatus.failed,
+          permanentFailure: true,
+          syncError: () => 'Test data is never uploaded.',
+        ),
+      );
       return RecordSyncResult(UploadOutcome.failed, record: r, message: 'Test data is never uploaded.');
     }
 
@@ -247,99 +264,130 @@ class SyncEngine {
         final match = await findOnServer(e);
         if (match != null) {
           final linked = await _markSynced(localId, match, viaReconciliation: true);
-          return RecordSyncResult(UploadOutcome.alreadySynced, record: linked, message: 'Found on server (id ${match.id})');
+          return RecordSyncResult(
+            UploadOutcome.alreadySynced,
+            record: linked,
+            message: 'Found on server (id ${match.id})',
+          );
         }
         e = await local.update(localId, (x) => x.copyWith(needsReconciliation: false));
       } on ApiException catch (err) {
         await local.update(localId, (x) => x.copyWith(lastSyncAttempt: () => _clock(), syncError: () => err.message));
-        return RecordSyncResult(UploadOutcome.failed, record: local.get(localId), message: err.message, networkDown: err.isNetwork);
+        return RecordSyncResult(
+          UploadOutcome.failed,
+          record: local.get(localId),
+          message: err.message,
+          networkDown: err.isNetwork,
+        );
       }
     }
 
     // 2. Rebuild the payload from the stored record and photo.
     final registration = await local.registrationFor(e!);
     if (registration == null) {
-      final r = await local.update(localId, (x) => x.copyWith(
-            syncStatus: SyncStatus.failed,
-            permanentFailure: true,
-            syncError: () => 'The photo for this employee is missing on this device.',
-          ));
+      final r = await local.update(
+        localId,
+        (x) => x.copyWith(
+          syncStatus: SyncStatus.failed,
+          permanentFailure: true,
+          syncError: () => 'The photo for this employee is missing on this device.',
+        ),
+      );
       return RecordSyncResult(UploadOutcome.failed, record: r, message: 'Photo missing');
     }
 
     // 3. Persist SYNCING before sending (crash-safe state machine).
-    await local.update(localId, (x) => x.copyWith(
-          syncStatus: SyncStatus.syncing,
-          lastSyncAttempt: () => _clock(),
-          attempts: x.attempts + 1,
-        ));
+    await local.update(
+      localId,
+      (x) => x.copyWith(syncStatus: SyncStatus.syncing, lastSyncAttempt: () => _clock(), attempts: x.attempts + 1),
+    );
 
     try {
       final result = await api.registerEmployee(registration, onSendProgress: onSendProgress);
       final emp = result.employee;
-      final synced = await local.update(localId, (x) => x.copyWith(
-            syncStatus: SyncStatus.synced,
-            serverId: () => emp?.id,
-            employeeNo: () => emp?.employeeNo,
-            templateId: () => emp?.templateId,
-            serverPhotoUrl: () => emp?.photoUrl,
-            enrollmentSource: () => emp?.rawEnrollmentSource,
-            liveWatchList: () => result.liveWatchList,
-            serverWarning: () => result.recognitionDelayed ? result.warningMessage : null,
-            lastSuccessfulSync: () => _clock(),
-            syncError: () => null,
-            nextRetryAt: () => null,
-            permanentFailure: false,
-            needsReconciliation: false,
-          ));
+      final synced = await local.update(
+        localId,
+        (x) => x.copyWith(
+          syncStatus: SyncStatus.synced,
+          serverId: () => emp?.id,
+          employeeNo: () => emp?.employeeNo,
+          templateId: () => emp?.templateId,
+          serverPhotoUrl: () => emp?.photoUrl,
+          enrollmentSource: () => emp?.rawEnrollmentSource,
+          liveWatchList: () => result.liveWatchList,
+          serverWarning: () => result.recognitionDelayed ? result.warningMessage : null,
+          lastSuccessfulSync: () => _clock(),
+          syncError: () => null,
+          nextRetryAt: () => null,
+          permanentFailure: false,
+          needsReconciliation: false,
+        ),
+      );
       if (emp != null) await cache.upsert(emp);
       return RecordSyncResult(UploadOutcome.uploaded, record: synced, result: result);
     } on ApiException catch (err) {
       return _fail(localId, err);
     } catch (_) {
-      return _fail(localId, const ApiException.local('Unexpected error during upload.',
-          kind: ApiErrorKind.unknown, mayHaveReachedServer: true));
+      return _fail(
+        localId,
+        const ApiException.local(
+          'Unexpected error during upload.',
+          kind: ApiErrorKind.unknown,
+          mayHaveReachedServer: true,
+        ),
+      );
     }
   }
 
   Future<RecordSyncResult> _fail(String localId, ApiException err) async {
     final now = _clock();
     if (err.mayHaveReachedServer) {
-      final r = await local.update(localId, (x) => x.copyWith(
-            syncStatus: SyncStatus.failed,
-            needsReconciliation: true,
-            nextRetryAt: () => now.add(retryDelay(x.attempts)),
-            syncError: () => 'We could not confirm whether the server saved this employee '
-                '(${err.message}). The server will be checked before retrying.',
-          ));
+      final r = await local.update(
+        localId,
+        (x) => x.copyWith(
+          syncStatus: SyncStatus.failed,
+          needsReconciliation: true,
+          nextRetryAt: () => now.add(retryDelay(x.attempts)),
+          syncError: () =>
+              'We could not confirm whether the server saved this employee '
+              '(${err.message}). The server will be checked before retrying.',
+        ),
+      );
       return RecordSyncResult(UploadOutcome.uncertain, record: r, message: err.message, networkDown: err.isNetwork);
     }
-    final rejected = err.statusCode >= 400 && err.statusCode < 500 && err.statusCode != 408 && err.statusCode != 429 ||
+    final rejected =
+        err.statusCode >= 400 && err.statusCode < 500 && err.statusCode != 408 && err.statusCode != 429 ||
         err.kind == ApiErrorKind.validation;
-    final r = await local.update(localId, (x) => x.copyWith(
-          syncStatus: SyncStatus.failed,
-          permanentFailure: rejected,
-          nextRetryAt: () => rejected ? null : now.add(retryDelay(x.attempts)),
-          syncError: () => err.message,
-        ));
+    final r = await local.update(
+      localId,
+      (x) => x.copyWith(
+        syncStatus: SyncStatus.failed,
+        permanentFailure: rejected,
+        nextRetryAt: () => rejected ? null : now.add(retryDelay(x.attempts)),
+        syncError: () => err.message,
+      ),
+    );
     return RecordSyncResult(UploadOutcome.failed, record: r, message: err.message, networkDown: err.isNetwork);
   }
 
   Future<LocalEmployee?> _markSynced(String localId, Employee match, {bool viaReconciliation = false}) async {
     await cache.upsert(match);
-    return local.update(localId, (x) => x.copyWith(
-          syncStatus: SyncStatus.synced,
-          serverId: () => match.id,
-          employeeNo: () => match.employeeNo,
-          templateId: () => match.templateId,
-          serverPhotoUrl: () => match.photoUrl,
-          enrollmentSource: () => match.rawEnrollmentSource,
-          lastSuccessfulSync: () => _clock(),
-          syncError: () => viaReconciliation ? null : x.syncError,
-          nextRetryAt: () => null,
-          needsReconciliation: false,
-          permanentFailure: false,
-        ));
+    return local.update(
+      localId,
+      (x) => x.copyWith(
+        syncStatus: SyncStatus.synced,
+        serverId: () => match.id,
+        employeeNo: () => match.employeeNo,
+        templateId: () => match.templateId,
+        serverPhotoUrl: () => match.photoUrl,
+        enrollmentSource: () => match.rawEnrollmentSource,
+        lastSuccessfulSync: () => _clock(),
+        syncError: () => viaReconciliation ? null : x.syncError,
+        nextRetryAt: () => null,
+        needsReconciliation: false,
+        permanentFailure: false,
+      ),
+    );
   }
 
   /// Searches the server for an employee matching [e] that no other local
@@ -361,8 +409,7 @@ class SyncEngine {
           dob.year == e.dateOfBirth.year &&
           dob.month == e.dateOfBirth.month &&
           dob.day == e.dateOfBirth.day;
-    }).toList()
-      ..sort((a, b) => (b.enrolledAt ?? DateTime(0)).compareTo(a.enrolledAt ?? DateTime(0)));
+    }).toList()..sort((a, b) => (b.enrolledAt ?? DateTime(0)).compareTo(a.enrolledAt ?? DateTime(0)));
     return matches.isEmpty ? null : matches.first;
   }
 }

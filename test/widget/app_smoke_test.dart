@@ -8,7 +8,6 @@ import 'package:cctv_app/core/routing/routes.dart';
 import 'package:cctv_app/core/services/providers.dart';
 import 'package:cctv_app/core/theme/app_theme.dart';
 import 'package:cctv_app/data/local/local_database.dart';
-import 'package:cctv_app/data/remote/demo_auth_api.dart';
 import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
 import 'package:cctv_app/features/employees/data/models/employee.dart';
 import 'package:cctv_app/features/employees/data/models/registration_result.dart';
@@ -36,7 +35,6 @@ void main() {
     dir = await Directory.systemTemp.createTemp('enrolly_widget_');
     db = await LocalDatabase.open(path: dir.path);
     final c = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
-    await c.read(demoAuthApiProvider).ensureDemoOperator();
     // Reduce motion so decorative repeating animations stop and
     // pumpAndSettle completes.
     await c.read(settingsProvider.notifier).update((s) => s.copyWith(reduceMotion: true));
@@ -69,16 +67,18 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final fake = backend ?? FakeBackend();
-    final container = ProviderContainer(overrides: [
-      localDatabaseProvider.overrideWithValue(db),
-      initialOperatorProvider.overrideWithValue(signedIn ? DemoAuthApi.demoOperator : null),
-      ...testOverrides(
-        backend: fake,
-        network: network ?? FakeDeviceNetwork(),
-        notifier: AppNotifier(key: GlobalKey<ScaffoldMessengerState>()),
-        environment: environment,
-      ),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        initialSessionProvider.overrideWithValue(signedIn ? testSession() : null),
+        ...testOverrides(
+          backend: fake,
+          network: network ?? FakeDeviceNetwork(),
+          notifier: AppNotifier(key: GlobalKey<ScaffoldMessengerState>()),
+          environment: environment,
+        ),
+      ],
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const EnrollyApp()));
     await tester.pumpAndSettle();
@@ -87,16 +87,16 @@ void main() {
 
   final sampleEmployee = EmployeeRecord(server: Employee.fromJson(sampleEmployeeJson(id: 1, name: 'Employee 1')));
   RegistrationOutcome outcome({bool delayed = false}) => RegistrationOutcome(
-        result: RegistrationResult.fromJson(201, {
-          ...sampleEmployeeJson(id: 42, name: 'Amina Rahman'),
-          'liveWatchList': !delayed,
-          if (delayed) 'warning': 'Employee saved. Recognition will be available when the engine starts.',
-        }),
-        environment: testBuildEnvironment().config,
-        submittedName: 'Amina Rahman',
-        designation: 'Software Engineer',
-        photo: EmployeePhoto.fromBytes(fakePng(64), origin: PhotoOrigin.upload),
-      );
+    result: RegistrationResult.fromJson(201, {
+      ...sampleEmployeeJson(id: 42, name: 'Amina Rahman'),
+      'liveWatchList': !delayed,
+      if (delayed) 'warning': 'Employee saved. Recognition will be available when the engine starts.',
+    }),
+    environment: testBuildEnvironment().config,
+    submittedName: 'Amina Rahman',
+    designation: 'Software Engineer',
+    photo: EmployeePhoto.fromBytes(fakePng(64), origin: PhotoOrigin.upload),
+  );
 
   /// The pagination bar sits below a lazily built list: scroll to it, then
   /// clear it from the floating mobile nav bar.
@@ -152,7 +152,11 @@ void main() {
       'Diagnostics',
       'Logout',
     ]) {
-      expect(find.descendant(of: find.byType(AppSidebar), matching: find.text(label)), findsOneWidget, reason: label);
+      expect(
+        find.descendant(of: find.byType(AppSidebar), matching: find.text(label)),
+        findsOneWidget,
+        reason: label,
+      );
     }
   });
 
@@ -160,7 +164,11 @@ void main() {
     await pumpApp(tester, const Size(390, 844));
     final nav = find.byType(AppBottomNavigation);
     for (final label in ['Home', 'Employees', 'Sync', 'Settings']) {
-      expect(find.descendant(of: nav, matching: find.text(label)), findsOneWidget, reason: label);
+      expect(
+        find.descendant(of: nav, matching: find.text(label)),
+        findsOneWidget,
+        reason: label,
+      );
     }
     expect(find.byKey(const Key('nav-register')), findsOneWidget);
   });
@@ -178,7 +186,10 @@ void main() {
     final backend = FakeBackend((_) => throw const SocketException('Connection refused'));
     await pumpApp(tester, const Size(1440, 900), backend: backend);
     expect(find.byKey(const Key('hero-total')), findsOneWidget);
-    expect(find.descendant(of: find.byKey(const Key('hero-total')), matching: find.text('—'), matchRoot: true), findsOneWidget);
+    expect(
+      find.descendant(of: find.byKey(const Key('hero-total')), matching: find.text('—'), matchRoot: true),
+      findsOneWidget,
+    );
     expect(find.text('Unavailable'), findsWidgets);
     expect(find.text('Server unavailable'), findsWidgets, reason: 'Wi-Fi is up but the server is not');
   });
@@ -369,10 +380,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Welcome back'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('login-email')), 'not-an-email');
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pumpAndSettle();
-    expect(find.text('Enter a valid email address'), findsOneWidget);
+    expect(find.text('Username is required'), findsOneWidget);
     expect(find.text('Password is required'), findsOneWidget);
   });
 

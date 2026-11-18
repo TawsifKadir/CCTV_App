@@ -303,7 +303,12 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
         // overlays and the rotating tip never force it to repaint (or v.v.).
         RepaintBoundary(child: preview),
         const CameraCaptureFrame(),
-        const Positioned(left: Space.md, right: Space.md, bottom: Space.md, child: Center(child: _RotatingTip())),
+        const Positioned(
+          left: Space.md,
+          right: Space.md,
+          bottom: Space.md,
+          child: Center(child: _RotatingTip()),
+        ),
         Positioned(top: Space.md, left: Space.md, child: _badge(Icons.circle, 'Live', AppColors.error)),
         // Shutter flash: listens to its own notifier, so the preview is not
         // rebuilt when it fires.
@@ -351,7 +356,11 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppIconButton(icon: Icons.upload_rounded, tooltip: 'Upload a photo instead', onPressed: widget.onUploadInstead),
+            AppIconButton(
+              icon: Icons.upload_rounded,
+              tooltip: 'Upload a photo instead',
+              onPressed: widget.onUploadInstead,
+            ),
             const SizedBox(width: Space.lg),
             _ShutterButton(onPressed: _capture),
             const SizedBox(width: Space.lg),
@@ -396,9 +405,17 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
               child: Icon(icon, color: color, size: 32),
             ),
             const SizedBox(height: Space.md),
-            Text(title, style: t.titleMedium?.copyWith(color: Colors.white), textAlign: TextAlign.center),
+            Text(
+              title,
+              style: t.titleMedium?.copyWith(color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 6),
-            Text(message, style: t.bodySmall?.copyWith(color: Colors.white60), textAlign: TextAlign.center),
+            Text(
+              message,
+              style: t.bodySmall?.copyWith(color: Colors.white60),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -406,20 +423,20 @@ class _FaceCaptureViewState extends State<FaceCaptureView> with WidgetsBindingOb
   }
 
   Widget _badge(IconData icon, String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(Radii.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: icon == Icons.circle ? 9 : 15, color: color),
-            const SizedBox(width: 6),
-            Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white)),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(Radii.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: icon == Icons.circle ? 9 : 15, color: color),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white)),
+      ],
+    ),
+  );
 }
 
 /// Capture tips that rotate every few seconds. Owns its timer and state so

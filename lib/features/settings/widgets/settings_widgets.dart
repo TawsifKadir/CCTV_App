@@ -85,7 +85,10 @@ class SettingsTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: t.labelLarge?.copyWith(color: color == AppColors.error ? AppColors.error : null)),
+                      Text(
+                        title,
+                        style: t.labelLarge?.copyWith(color: color == AppColors.error ? AppColors.error : null),
+                      ),
                       if (subtitle != null) Text(subtitle!, style: t.bodySmall),
                     ],
                   ),

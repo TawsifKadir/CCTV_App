@@ -7,6 +7,9 @@ import 'package:cctv_app/core/config/environment_registry.dart';
 import 'package:cctv_app/core/services/providers.dart';
 import 'package:cctv_app/data/local/local_database.dart';
 import 'package:cctv_app/data/models/operator.dart';
+import 'package:cctv_app/features/authentication/data/auth_session.dart';
+import 'package:cctv_app/features/authentication/data/session_store.dart';
+import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
 import 'package:cctv_app/core/services/app_notifier.dart';
 import 'package:cctv_app/features/connectivity/connectivity_service.dart';
 import 'package:cctv_app/features/environments/presentation/providers/environment_providers.dart';
@@ -29,7 +32,11 @@ class FakeBackend implements HttpClientAdapter {
   List<RequestOptions> get listRequests => requests.where((r) => r.path.endsWith('/employee/list')).toList();
 
   @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
     requests.add(options);
     if (requestStream != null) await requestStream.drain<void>();
     return handler(options);
@@ -40,6 +47,7 @@ class FakeBackend implements HttpClientAdapter {
 
   /// Answers list requests with [samplePage] and registrations with 201.
   static FutureOr<ResponseBody> defaultHandler(RequestOptions o) {
+    if (o.path.endsWith('/auth/login')) return fakeLogin(o);
     if (o.path.endsWith('/employee/add')) return json(201, {...sampleEmployeeJson(), 'liveWatchList': true});
     final q = o.queryParameters;
     return json(200, samplePage(page: (q['page'] as int?) ?? 0, size: (q['size'] as int?) ?? 24, total: 30));
@@ -47,34 +55,75 @@ class FakeBackend implements HttpClientAdapter {
 }
 
 ResponseBody json(int status, Object? body) => ResponseBody.fromString(
-      body == null ? '' : jsonEncode(body),
-      status,
-      headers: {
-        Headers.contentTypeHeader: ['application/json'],
-      },
-    );
+  body == null ? '' : jsonEncode(body),
+  status,
+  headers: {
+    Headers.contentTypeHeader: ['application/json'],
+  },
+);
 
 ResponseBody text(int status, String body) => ResponseBody.fromString(body, status);
 
-Map<String, dynamic> sampleEmployeeJson({int id = 1, String name = 'Example Employee', String? photoUrl, String source = 'photo'}) => {
-      'id': id,
-      'employeeNo': 1000 + id,
-      'name': name,
-      'dateOfBirth': '1998-05-20',
-      'designation': 'Software Engineer',
-      'templateId': 'template-$id',
-      'templateBytes': 2048,
-      'enrolledAt': '2026-11-16T10:30:00',
-      'photoUrl': photoUrl,
-      'enrollmentSource': source,
-    };
+const testUsername = 'admin';
+const testPassword = 'Admin@123';
+
+/// Stand-in for POST /api/auth/login with the confirmed response shape and
+/// Spring's cookie CSRF: without a matching X-XSRF-TOKEN it answers 403 and
+/// issues a token (like the real server).
+ResponseBody fakeLogin(RequestOptions o) {
+  const xsrf = 'csrf-abc';
+  if (o.headers['X-XSRF-TOKEN'] != xsrf || !(o.headers['Cookie']?.toString().contains('XSRF-TOKEN=$xsrf') ?? false)) {
+    return ResponseBody.fromString(
+      jsonEncode({'status': 403, 'error': 'Forbidden', 'timestamp': 'x'}),
+      403,
+      headers: {
+        'set-cookie': ['XSRF-TOKEN=$xsrf; Path=/'],
+        Headers.contentTypeHeader: ['application/json'],
+      },
+    );
+  }
+  final body = o.data is Map ? o.data as Map : const {};
+  if (body['username'] == testUsername && body['password'] == testPassword) {
+    return json(200, {'token': 'tok-123', 'role': 'admin', 'username': 'admin', 'expiresIn': 1800});
+  }
+  return json(401, {'message': 'Invalid username or password.'});
+}
+
+/// A signed-in session for the test environment.
+AuthSession testSession({String environmentId = 'local'}) => AuthSession(
+  operator: const Operator(username: 'admin', displayName: 'Admin User'),
+  environmentId: environmentId,
+  createdAt: DateTime(2026, 11, 17),
+  accessToken: 'tok-123',
+  tokenType: 'Bearer',
+);
+
+Map<String, dynamic> sampleEmployeeJson({
+  int id = 1,
+  String name = 'Example Employee',
+  String? photoUrl,
+  String source = 'photo',
+}) => {
+  'id': id,
+  'employeeNo': 1000 + id,
+  'name': name,
+  'dateOfBirth': '1998-05-20',
+  'designation': 'Software Engineer',
+  'templateId': 'template-$id',
+  'templateBytes': 2048,
+  'enrolledAt': '2026-11-16T10:30:00',
+  'photoUrl': photoUrl,
+  'enrollmentSource': source,
+};
 
 Map<String, dynamic> samplePage({int page = 0, int size = 24, int total = 30}) {
   final totalPages = total == 0 ? 0 : (total + size - 1) ~/ size;
   final start = page * size;
   final count = (total - start).clamp(0, size);
   return {
-    'content': [for (var i = 0; i < count; i++) sampleEmployeeJson(id: start + i + 1, name: 'Employee ${start + i + 1}')],
+    'content': [
+      for (var i = 0; i < count; i++) sampleEmployeeJson(id: start + i + 1, name: 'Employee ${start + i + 1}'),
+    ],
     'page': page,
     'size': size,
     'totalElements': total,
@@ -121,17 +170,18 @@ List<Override> testOverrides({
   required FakeDeviceNetwork network,
   required AppNotifier notifier,
   BuildEnvironment? environment,
-}) =>
-    [
-      buildEnvironmentProvider.overrideWithValue(environment ?? testBuildEnvironment()),
-      dioFactoryProvider.overrideWithValue(() => Dio()..httpClientAdapter = backend),
-      deviceNetworkProvider.overrideWith((ref) => network.stream()),
-      connectivityConfigProvider.overrideWithValue(const ConnectivityConfig(monitor: false)),
-      appNotifierProvider.overrideWithValue(notifier),
-    ];
+  SessionStore? sessionStore,
+}) => [
+  sessionStoreProvider.overrideWithValue(sessionStore ?? MemorySessionStore()),
+  buildEnvironmentProvider.overrideWithValue(environment ?? testBuildEnvironment()),
+  dioFactoryProvider.overrideWithValue(() => Dio()..httpClientAdapter = backend),
+  deviceNetworkProvider.overrideWith((ref) => network.stream()),
+  connectivityConfigProvider.overrideWithValue(const ConnectivityConfig(monitor: false)),
+  appNotifierProvider.overrideWithValue(notifier),
+];
 
 class TestEnv {
-  TestEnv._(this.dir, this.db, this.container, this.backend, this.network, this.notifier);
+  TestEnv._(this.dir, this.db, this.container, this.backend, this.network, this.notifier, this.sessions);
 
   final Directory dir;
   final LocalDatabase db;
@@ -139,21 +189,38 @@ class TestEnv {
   final FakeBackend backend;
   final FakeDeviceNetwork network;
   final AppNotifier notifier;
+  final MemorySessionStore sessions;
 
-  static Future<TestEnv> create({FakeBackend? backend, BuildEnvironment? environment, Directory? reuse}) async {
+  static Future<TestEnv> create({
+    FakeBackend? backend,
+    BuildEnvironment? environment,
+    Directory? reuse,
+    MemorySessionStore? sessions,
+    AuthSession? initialSession,
+  }) async {
     final dir = reuse ?? await Directory.systemTemp.createTemp('enrolly_test_');
     final db = await LocalDatabase.open(path: dir.path);
     final fake = backend ?? FakeBackend();
     final network = FakeDeviceNetwork();
     final notifier = AppNotifier(key: GlobalKey<ScaffoldMessengerState>(), dedupeWindow: Duration.zero);
-    final container = ProviderContainer(overrides: [
-      localDatabaseProvider.overrideWithValue(db),
-      ...testOverrides(backend: fake, network: network, notifier: notifier, environment: environment),
-    ]);
+    final store = sessions ?? MemorySessionStore();
+    final container = ProviderContainer(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        initialSessionProvider.overrideWithValue(initialSession),
+        ...testOverrides(
+          backend: fake,
+          network: network,
+          notifier: notifier,
+          environment: environment,
+          sessionStore: store,
+        ),
+      ],
+    );
     // Start the device-network stream so the connection status sees it.
     container.listen(deviceNetworkProvider, (_, _) {});
     await container.read(deviceNetworkProvider.future);
-    return TestEnv._(dir, db, container, fake, network, notifier);
+    return TestEnv._(dir, db, container, fake, network, notifier, store);
   }
 
   /// Lets queued microtasks and Hive writes settle.
@@ -172,14 +239,6 @@ class TestEnv {
     if (await dir.exists()) await dir.delete(recursive: true);
   }
 }
-
-final testOperator = Operator(
-  id: 'op-test',
-  fullName: 'Test Operator',
-  email: 'operator@example.com',
-  phone: '+1 555 010 0000',
-  createdAt: DateTime(2026, 1, 1),
-);
 
 /// Bytes with a JPEG signature (only the signature is validated client-side).
 Uint8List fakeJpeg([int size = 2048]) {
@@ -218,6 +277,7 @@ class FakeServer {
 
   FutureOr<ResponseBody> _handle(RequestOptions o) {
     if (down) throw const SocketException('Connection refused');
+    if (o.path.endsWith('/auth/login')) return fakeLogin(o);
     if (o.path.endsWith('/employee/add')) {
       postCount++;
       final form = o.data as FormData;

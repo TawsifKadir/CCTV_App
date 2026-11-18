@@ -47,18 +47,24 @@ class EmployeePage {
   /// rejected as an invalid response.
   factory EmployeePage.fromJson(Object? json) {
     if (json == null) {
-      throw const ApiException.local('The server sent an empty employee list response.',
-          kind: ApiErrorKind.emptyResponse);
+      throw const ApiException.local(
+        'The server sent an empty employee list response.',
+        kind: ApiErrorKind.emptyResponse,
+      );
     }
     if (json is! Map) {
-      throw const ApiException.local('The employee list response has an unexpected format.',
-          kind: ApiErrorKind.invalidResponse);
+      throw const ApiException.local(
+        'The employee list response has an unexpected format.',
+        kind: ApiErrorKind.invalidResponse,
+      );
     }
     final j = Map<String, dynamic>.from(json);
     final rawContent = j['content'] ?? const [];
     if (rawContent is! List) {
-      throw const ApiException.local('The employee list response has an unexpected format.',
-          kind: ApiErrorKind.invalidResponse);
+      throw const ApiException.local(
+        'The employee list response has an unexpected format.',
+        kind: ApiErrorKind.invalidResponse,
+      );
     }
     final content = <Employee>[
       for (final item in rawContent)

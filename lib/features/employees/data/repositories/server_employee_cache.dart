@@ -10,7 +10,8 @@ import '../models/employee_query.dart';
 /// can still be browsed and searched offline. Always shown with the time of
 /// the last successful refresh — it is a cache, never presented as live.
 class ServerEmployeeCache {
-  ServerEmployeeCache(this._box, {required this.environmentId, DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  ServerEmployeeCache(this._box, {required this.environmentId, DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now;
 
   final Box<dynamic> _box;
   final String environmentId;
@@ -95,7 +96,9 @@ class ServerEmployeeCache {
   int get count => _box.keys.where((k) => k is String && k.startsWith(_prefix)).length;
 
   Future<void> clear() async {
-    final keys = _box.keys.where((k) => k is String && (k.startsWith(_prefix) || k == _refreshKey || k == _totalKey)).toList();
+    final keys = _box.keys
+        .where((k) => k is String && (k.startsWith(_prefix) || k == _refreshKey || k == _totalKey))
+        .toList();
     await _box.deleteAll(keys);
   }
 }

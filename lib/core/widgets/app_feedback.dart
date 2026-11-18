@@ -56,7 +56,11 @@ class AppEmptyState extends StatelessWidget {
               SizedBox(height: compact ? Space.md : Space.lg),
               Text(title, style: compact ? t.titleMedium : t.titleLarge, textAlign: TextAlign.center),
               const SizedBox(height: Space.xs),
-              Text(message, style: t.bodyMedium?.copyWith(color: p.textMuted), textAlign: TextAlign.center),
+              Text(
+                message,
+                style: t.bodyMedium?.copyWith(color: p.textMuted),
+                textAlign: TextAlign.center,
+              ),
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: Space.lg),
                 AppPrimaryButton(label: actionLabel!, onPressed: onAction, expand: false, height: 48),
@@ -156,14 +160,20 @@ class AppConfirmationDialog extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(color: color.withValues(alpha: 0.13), shape: BoxShape.circle),
-                child: Icon(icon ?? (destructive ? Icons.delete_outline_rounded : Icons.help_outline_rounded),
-                    color: color, size: 28),
+                child: Icon(
+                  icon ?? (destructive ? Icons.delete_outline_rounded : Icons.help_outline_rounded),
+                  color: color,
+                  size: 28,
+                ),
               ),
               const SizedBox(height: Space.md),
               Text(title, style: t.titleLarge, textAlign: TextAlign.center),
               const SizedBox(height: Space.xs),
-              Text(message,
-                  style: t.bodyMedium?.copyWith(color: context.palette.textMuted), textAlign: TextAlign.center),
+              Text(
+                message,
+                style: t.bodyMedium?.copyWith(color: context.palette.textMuted),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: Space.lg),
               Row(
                 children: [
@@ -208,28 +218,24 @@ void showAppSnack(BuildContext context, String message, {SnackType type = SnackT
   final width = MediaQuery.sizeOf(context).width;
   messenger
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      width: width > 600 ? 440 : null,
-      duration: const Duration(seconds: 4),
-      content: Row(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: Space.sm),
-          Expanded(child: Text(message)),
-        ],
+    ..showSnackBar(
+      SnackBar(
+        width: width > 600 ? 440 : null,
+        duration: const Duration(seconds: 4),
+        content: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: Space.sm),
+            Expanded(child: Text(message)),
+          ],
+        ),
       ),
-    ));
+    );
 }
 
 /// Inline banner for errors / notices inside forms and pages.
 class AppBanner extends StatelessWidget {
-  const AppBanner({
-    super.key,
-    required this.message,
-    this.type = SnackType.error,
-    this.title,
-    this.action,
-  });
+  const AppBanner({super.key, required this.message, this.type = SnackType.error, this.title, this.action});
 
   final String message;
   final String? title;

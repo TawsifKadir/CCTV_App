@@ -11,13 +11,6 @@ class AppConstants {
   /// Brand image (generated from assets/branding/source_photo.jpg).
   static const logoAsset = 'assets/branding/app_logo.png';
 
-  /// Demo operator created on first launch (operator sign-in is on-device
-  /// until the backend provides an authentication API).
-  static const demoOperatorName = 'Jordan Hale';
-  static const demoEmail = 'admin@enrolly.demo';
-  static const demoPassword = 'Admin@123';
-  static const demoOrganization = 'Enrolly HQ';
-
   /// Longest edge (px) of photos sent for registration. Large enough for
   /// face-template extraction, small enough to upload quickly.
   static const photoMaxEdge = 1600;
@@ -42,20 +35,19 @@ class BoxNames {
   static const settings = 'settings';
   static const session = 'session';
 
-  /// Demo operator accounts. The name predates the employee backend and is
-  /// kept so existing operator accounts survive the upgrade.
-  static const demoOperators = 'mock_backend_operators';
-
   /// Offline-first employee data (per backend environment).
   static const localEmployees = 'local_employees';
   static const serverEmployeeCache = 'server_employee_cache';
   static const syncHistory = 'sync_history';
 
+  /// Simulated server used only by demo sessions (non-production builds).
+  static const demoBackend = 'demo_backend';
+
   /// Photographs of locally registered employees (lazy: loaded on demand,
   /// so large images are not all held in memory).
   static const localEmployeePhotos = 'local_employee_photos';
 
-  static const all = [activities, settings, session, demoOperators, localEmployees, serverEmployeeCache, syncHistory];
+  static const all = [activities, settings, session, localEmployees, serverEmployeeCache, syncHistory, demoBackend];
   static const lazy = [localEmployeePhotos];
 
   /// Boxes from the previous offline customer/mock-sync model. They are
@@ -68,5 +60,7 @@ class BoxNames {
     'mock_backend_customers',
     'mock_backend_images',
     'mock_backend_meta',
+    // Former on-device demo operator accounts (sign-in now uses the backend).
+    'mock_backend_operators',
   ];
 }

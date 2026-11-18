@@ -55,43 +55,45 @@ class ConfigurationErrorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      home: Builder(builder: (context) {
-        final t = Theme.of(context).textTheme;
-        return Scaffold(
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(Space.lg),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const EnrollyLogoMark(size: 56),
-                    const SizedBox(height: Space.lg),
-                    Text('Backend not configured', style: t.headlineMedium),
-                    const SizedBox(height: Space.xs),
-                    Text(
-                      'This build targets the "${error.environmentId}" environment, which cannot be used.',
-                      style: t.bodyLarge?.copyWith(color: context.palette.textMuted),
-                    ),
-                    const SizedBox(height: Space.lg),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(Space.md),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.1),
-                        borderRadius: Radii.mdAll,
-                        border: Border.all(color: AppColors.error.withValues(alpha: 0.35)),
+      home: Builder(
+        builder: (context) {
+          final t = Theme.of(context).textTheme;
+          return Scaffold(
+            body: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(Space.lg),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const EnrollyLogoMark(size: 56),
+                      const SizedBox(height: Space.lg),
+                      Text('Backend not configured', style: t.headlineMedium),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        'This build targets the "${error.environmentId}" environment, which cannot be used.',
+                        style: t.bodyLarge?.copyWith(color: context.palette.textMuted),
                       ),
-                      child: SelectableText(error.message, style: t.bodyMedium),
-                    ),
-                  ],
+                      const SizedBox(height: Space.lg),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(Space.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: Radii.mdAll,
+                          border: Border.all(color: AppColors.error.withValues(alpha: 0.35)),
+                        ),
+                        child: SelectableText(error.message, style: t.bodyMedium),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }

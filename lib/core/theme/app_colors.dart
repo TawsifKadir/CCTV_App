@@ -125,8 +125,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
 }
 
 extension AppPaletteContext on BuildContext {
-  AppPalette get palette =>
-      Theme.of(this).extension<AppPalette>() ?? AppPalette.light;
+  AppPalette get palette => Theme.of(this).extension<AppPalette>() ?? AppPalette.light;
 
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
 

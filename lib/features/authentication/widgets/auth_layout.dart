@@ -16,6 +16,7 @@ class AuthLayout extends StatelessWidget {
     required this.subtitle,
     required this.child,
     this.leading,
+    this.footer,
   });
 
   final String title;
@@ -23,11 +24,14 @@ class AuthLayout extends StatelessWidget {
   final Widget child;
   final Widget? leading;
 
+  /// Optional content under the form (e.g. environment info).
+  final Widget? footer;
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final wide = context.screenWidth >= 900;
-    final form = _FormColumn(title: title, subtitle: subtitle, leading: leading, child: child);
+    final form = _FormColumn(title: title, subtitle: subtitle, leading: leading, footer: footer, child: child);
     return Scaffold(
       backgroundColor: p.background,
       body: wide
@@ -62,12 +66,13 @@ class AuthLayout extends StatelessWidget {
 }
 
 class _FormColumn extends StatelessWidget {
-  const _FormColumn({required this.title, required this.subtitle, required this.child, this.leading});
+  const _FormColumn({required this.title, required this.subtitle, required this.child, this.leading, this.footer});
 
   final String title;
   final String subtitle;
   final Widget child;
   final Widget? leading;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +91,7 @@ class _FormColumn extends StatelessWidget {
         const SizedBox(height: Space.lg),
         child.entrance(context, index: 3),
         const SizedBox(height: Space.lg),
-        const Center(child: DemoNotice()),
+        ?footer,
       ],
     );
   }
@@ -105,16 +110,8 @@ class _BrandPanel extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned(
-            right: -90,
-            top: -60,
-            child: _ring(320, AppColors.peach.withValues(alpha: 0.18)),
-          ),
-          Positioned(
-            left: -70,
-            bottom: -90,
-            child: _ring(260, Colors.white.withValues(alpha: 0.05)),
-          ),
+          Positioned(right: -90, top: -60, child: _ring(320, AppColors.peach.withValues(alpha: 0.18))),
+          Positioned(left: -70, bottom: -90, child: _ring(260, Colors.white.withValues(alpha: 0.05))),
           Padding(
             padding: const EdgeInsets.all(Space.xxl),
             child: Column(
@@ -152,10 +149,10 @@ class _BrandPanel extends StatelessWidget {
   }
 
   Widget _ring(double size, Color color) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      );
+    width: size,
+    height: size,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
 }
 
 class _Feature extends StatelessWidget {
@@ -215,8 +212,10 @@ class _ScanIllustration extends StatelessWidget {
                     color: AppColors.success.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(Radii.pill),
                   ),
-                  child: Text('Registered',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.success)),
+                  child: Text(
+                    'Registered',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.success),
+                  ),
                 ),
               ],
             ),
@@ -229,13 +228,13 @@ class _ScanIllustration extends StatelessWidget {
   }
 
   Widget _bar(double w, double a) => Container(
-        width: w,
-        height: 10,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: a),
-          borderRadius: BorderRadius.circular(5),
-        ),
-      );
+    width: w,
+    height: 10,
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: a),
+      borderRadius: BorderRadius.circular(5),
+    ),
+  );
 }
 
 /// One-shot elastic pop-in for the logo (transform-only, no rebuilds).
@@ -259,8 +258,10 @@ class _PopInState extends State<_PopIn> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      FadeTransition(opacity: _fade, child: ScaleTransition(scale: _scale, child: widget.child));
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _fade,
+    child: ScaleTransition(scale: _scale, child: widget.child),
+  );
 }
 
 /// Gentle floating motion for the decorative card. It is isolated in a
@@ -276,8 +277,10 @@ class _Float extends StatefulWidget {
 
 class _FloatState extends State<_Float> with SingleTickerProviderStateMixin {
   late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat(reverse: true);
-  late final _offset = Tween(begin: const Offset(0, -0.025), end: const Offset(0, 0.025))
-      .animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
+  late final _offset = Tween(
+    begin: const Offset(0, -0.025),
+    end: const Offset(0, 0.025),
+  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
 
   @override
   void dispose() {
@@ -286,6 +289,7 @@ class _FloatState extends State<_Float> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      RepaintBoundary(child: SlideTransition(position: _offset, child: widget.child));
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: SlideTransition(position: _offset, child: widget.child),
+  );
 }

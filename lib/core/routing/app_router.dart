@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/activity/presentation/screens/activity_screen.dart';
 import '../../features/authentication/providers/auth_controller.dart';
 import '../../features/authentication/screens/login_screen.dart';
-import '../../features/authentication/screens/register_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/connectivity/app_features_provider.dart';
 import '../../features/diagnostics/diagnostics_screen.dart';
@@ -60,7 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: signedIn,
     redirect: (context, state) {
       final loc = state.matchedLocation;
-      final onAuthPage = loc == Routes.login || loc == Routes.register;
+      final onAuthPage = loc == Routes.login;
       if (!signedIn.value && !onAuthPage) return Routes.login;
       if (signedIn.value && onAuthPage) return Routes.home;
       if (loc == '/') return Routes.home;
@@ -77,14 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       GoRoute(path: '/', redirect: (_, _) => Routes.home),
-      GoRoute(
-        path: Routes.login,
-        pageBuilder: (context, state) => _page(state, const LoginScreen(), fadeOnly: true),
-      ),
-      GoRoute(
-        path: Routes.register,
-        pageBuilder: (context, state) => _page(state, const RegisterScreen()),
-      ),
+      GoRoute(path: Routes.login, pageBuilder: (context, state) => _page(state, const LoginScreen(), fadeOnly: true)),
       ShellRoute(
         navigatorKey: _shellKey,
         builder: (context, state, child) => AppShell(location: state.uri.path, child: child),
@@ -109,25 +101,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          GoRoute(
-            path: Routes.enroll,
-            pageBuilder: (context, state) => _page(state, const RegisterEmployeeScreen()),
-          ),
+          GoRoute(path: Routes.enroll, pageBuilder: (context, state) => _page(state, const RegisterEmployeeScreen())),
           // The outcome is passed in memory; on a reload there is nothing to
           // show, so start a new registration instead.
           GoRoute(
             path: Routes.enrollSuccess,
             redirect: (context, state) => state.extra is RegistrationOutcome ? null : Routes.enroll,
-            pageBuilder: (context, state) => _page(
-              state,
-              RegistrationSuccessScreen(outcome: state.extra! as RegistrationOutcome),
-              fadeOnly: true,
-            ),
+            pageBuilder: (context, state) =>
+                _page(state, RegistrationSuccessScreen(outcome: state.extra! as RegistrationOutcome), fadeOnly: true),
           ),
-          GoRoute(
-            path: Routes.sync,
-            pageBuilder: (context, state) => _page(state, const SyncScreen(), fadeOnly: true),
-          ),
+          GoRoute(path: Routes.sync, pageBuilder: (context, state) => _page(state, const SyncScreen(), fadeOnly: true)),
           GoRoute(
             path: Routes.settings,
             pageBuilder: (context, state) => _page(state, const SettingsScreen(), fadeOnly: true),

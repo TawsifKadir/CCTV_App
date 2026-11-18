@@ -88,17 +88,17 @@ class Employee {
       j.containsKey('id') || j.containsKey('employeeNo') || j.containsKey('name') || j.containsKey('fullName');
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'employeeNo': employeeNo,
-        'name': name,
-        'dateOfBirth': dateOfBirth == null ? null : isoDate(dateOfBirth!),
-        'designation': designation,
-        'templateId': templateId,
-        'templateBytes': templateBytes,
-        'enrolledAt': enrolledAt?.toIso8601String(),
-        'photoUrl': photoUrl,
-        'enrollmentSource': rawEnrollmentSource ?? enrollmentSource?.apiValue,
-      };
+    'id': id,
+    'employeeNo': employeeNo,
+    'name': name,
+    'dateOfBirth': dateOfBirth == null ? null : isoDate(dateOfBirth!),
+    'designation': designation,
+    'templateId': templateId,
+    'templateBytes': templateBytes,
+    'enrolledAt': enrolledAt?.toIso8601String(),
+    'photoUrl': photoUrl,
+    'enrollmentSource': rawEnrollmentSource ?? enrollmentSource?.apiValue,
+  };
 
   @override
   bool operator ==(Object other) => other is Employee && other.key == key && other.photoUrl == photoUrl;

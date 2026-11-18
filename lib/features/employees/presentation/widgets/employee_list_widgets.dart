@@ -65,7 +65,12 @@ class EmployeeCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(e.designation ?? '—', style: t.bodyMedium?.copyWith(color: p.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  e.designation ?? '—',
+                  style: t.bodyMedium?.copyWith(color: p.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: Space.xs),
                 Wrap(
                   spacing: Space.xs,
@@ -113,18 +118,23 @@ class EmployeeTableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    Widget head(String s, int flex) => Expanded(flex: flex, child: Text(s.toUpperCase(), style: t.labelSmall?.copyWith(letterSpacing: 0.6)));
+    Widget head(String s, int flex) => Expanded(
+      flex: flex,
+      child: Text(s.toUpperCase(), style: t.labelSmall?.copyWith(letterSpacing: 0.6)),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Space.lg, vertical: Space.sm + 2),
-      child: Row(children: [
-        head('Employee', 5),
-        head('Emp. No', 2),
-        head('Designation', 4),
-        head('Date of birth', 3),
-        head('Enrolled', 3),
-        head('Status', 3),
-        const SizedBox(width: 32),
-      ]),
+      child: Row(
+        children: [
+          head('Employee', 5),
+          head('Emp. No', 2),
+          head('Designation', 4),
+          head('Date of birth', 3),
+          head('Enrolled', 3),
+          head('Status', 3),
+          const SizedBox(width: 32),
+        ],
+      ),
     );
   }
 }
@@ -186,10 +196,22 @@ class _EmployeeTableRowState extends State<EmployeeTableRow> {
                     ),
                   ),
                   Expanded(flex: 2, child: Text(Fmt.employeeNo(e.employeeNo), style: t.labelLarge)),
-                  Expanded(flex: 4, child: Text(e.designation ?? '—', style: t.bodyMedium, overflow: TextOverflow.ellipsis)),
+                  Expanded(
+                    flex: 4,
+                    child: Text(e.designation ?? '—', style: t.bodyMedium, overflow: TextOverflow.ellipsis),
+                  ),
                   Expanded(flex: 3, child: Text(Fmt.date(e.dateOfBirth), style: t.bodyMedium)),
-                  Expanded(flex: 3, child: Text(Fmt.dateTime(e.enrolledAt), style: t.bodyMedium, overflow: TextOverflow.ellipsis)),
-                  Expanded(flex: 3, child: Align(alignment: Alignment.centerLeft, child: SyncStatusBadge(record: rec))),
+                  Expanded(
+                    flex: 3,
+                    child: Text(Fmt.dateTime(e.enrolledAt), style: t.bodyMedium, overflow: TextOverflow.ellipsis),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: SyncStatusBadge(record: rec),
+                    ),
+                  ),
                   SizedBox(
                     width: 32,
                     child: Icon(Icons.chevron_right_rounded, color: _hover ? AppColors.peach : p.textMuted),
@@ -268,7 +290,10 @@ class _FilterChip extends StatelessWidget {
               children: [
                 Icon(icon, size: 16, color: selected ? AppColors.peach : p.textMuted),
                 const SizedBox(width: 6),
-                Text(label, style: t.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+                Text(
+                  label,
+                  style: t.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),
@@ -280,13 +305,7 @@ class _FilterChip extends StatelessWidget {
 
 /// Server-side pagination controls. Compact on phones; numbered on desktop.
 class PaginationBar extends StatelessWidget {
-  const PaginationBar({
-    super.key,
-    required this.page,
-    required this.onPage,
-    this.compact = false,
-    this.busy = false,
-  });
+  const PaginationBar({super.key, required this.page, required this.onPage, this.compact = false, this.busy = false});
 
   final EmployeePage page;
   final ValueChanged<int> onPage;
@@ -335,14 +354,22 @@ class PaginationBar extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(child: Text('Showing $summary employees', style: t.bodyMedium?.copyWith(color: p.textMuted))),
-        DefaultTextStyle.merge(style: TextStyle(color: p.textMuted), child: pageLabel),
+        Expanded(
+          child: Text('Showing $summary employees', style: t.bodyMedium?.copyWith(color: p.textMuted)),
+        ),
+        DefaultTextStyle.merge(
+          style: TextStyle(color: p.textMuted),
+          child: pageLabel,
+        ),
         const SizedBox(width: Space.md),
         prev,
         const SizedBox(width: Space.xs),
         for (final i in _windowed(current, total)) ...[
           if (i == null)
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text('…', style: t.labelLarge))
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text('…', style: t.labelLarge),
+            )
           else
             _PageNumber(index: i, selected: i == current, onTap: busy ? null : () => onPage(i)),
           const SizedBox(width: 4),
@@ -390,10 +417,7 @@ class _PageNumber extends StatelessWidget {
           height: 38,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '${index + 1}',
-            style: t.labelLarge?.copyWith(color: selected ? Colors.white : p.text),
-          ),
+          child: Text('${index + 1}', style: t.labelLarge?.copyWith(color: selected ? Colors.white : p.text)),
         ),
       ),
     );
@@ -446,12 +470,7 @@ Widget animatedListItem(BuildContext context, int index, Widget child) =>
 
 /// All / On server / Local only / Pending sync / Failed sync, with counts.
 class RecordFilterChips extends StatelessWidget {
-  const RecordFilterChips({
-    super.key,
-    required this.selected,
-    required this.onChanged,
-    required this.counts,
-  });
+  const RecordFilterChips({super.key, required this.selected, required this.onChanged, required this.counts});
 
   final RecordFilter selected;
   final ValueChanged<RecordFilter> onChanged;

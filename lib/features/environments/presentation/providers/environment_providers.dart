@@ -9,6 +9,10 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_exceptions.dart';
 import '../../../../core/services/providers.dart';
 import '../../../../data/models/activity.dart';
+import '../../../../core/config/app_features.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../authentication/providers/auth_controller.dart';
+import '../../../demo/demo_backend.dart';
 import '../../../connectivity/app_features_provider.dart';
 import '../../../connectivity/connectivity_service.dart';
 import '../../../diagnostics/data/network_log.dart';
@@ -50,7 +54,9 @@ class ActiveEnvironmentController extends Notifier<EnvironmentConfig> {
       ..clear()
       ..clearLiveImages();
     await ref.read(settingsProvider.notifier).update((s) => s.copyWith(selectedEnvironmentId: () => environmentId));
-    await ref.read(activityRepositoryProvider).log(
+    await ref
+        .read(activityRepositoryProvider)
+        .log(
           ActivityType.environmentChanged,
           'Switched to ${target.environmentName}',
           subtitle: 'From ${previous.environmentName} · ${target.baseUrl}',
@@ -59,12 +65,30 @@ class ActiveEnvironmentController extends Notifier<EnvironmentConfig> {
   }
 }
 
-final activeEnvironmentProvider =
-    NotifierProvider<ActiveEnvironmentController, EnvironmentConfig>(ActiveEnvironmentController.new);
+final activeEnvironmentProvider = NotifierProvider<ActiveEnvironmentController, EnvironmentConfig>(
+  ActiveEnvironmentController.new,
+);
 
 /// Creates the underlying [Dio]. Overridden in tests to plug in a fake
 /// HTTP adapter; the app uses the platform default.
 final dioFactoryProvider = Provider<Dio Function()>((ref) => Dio.new);
+
+/// `true` during a demo session (non-production builds only). Set by
+/// AuthController; kept separate from the session so the HTTP client does
+/// not depend on the auth state (which itself uses the client).
+class DemoModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void set(bool on) => state = !kProductionBuild && on;
+}
+
+final isDemoSessionProvider = NotifierProvider<DemoModeNotifier, bool>(DemoModeNotifier.new);
+
+/// Scope for on-device employee data: the environment id, or `demo` during a
+/// demo session, so demo records never mix with real ones.
+final dataScopeProvider = Provider<String>(
+  (ref) => ref.watch(isDemoSessionProvider) ? 'demo' : ref.watch(activeEnvironmentProvider).environmentId,
+);
 
 /// Recent requests (admin builds; the recorder isn't installed otherwise).
 final networkLogProvider = Provider<NetworkLog>((ref) {
@@ -80,6 +104,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   final authHeader = ref.watch(authHeaderProvider);
   var disposed = false;
   final dio = ref.watch(dioFactoryProvider)();
+  // Demo sessions talk to the in-app demo server, never to a real backend.
+  // The branch is compiled out of production builds.
+  if (!kProductionBuild && ref.watch(isDemoSessionProvider)) {
+    dio.httpClientAdapter = DemoBackendAdapter(ref.watch(localDatabaseProvider).box(BoxNames.demoBackend));
+  }
   // Admin builds only: the request recorder is not even installed in client
   // (production) builds.
   if (ref.watch(appFeaturesProvider).networkInspector) {
@@ -92,6 +121,9 @@ final apiClientProvider = Provider<ApiClient>((ref) {
     logRequests: kDebugMode && env.allowDebugFeatures,
     onReachable: () {
       if (!disposed) ref.read(connectionStatusProvider.notifier).markReachable(env.environmentId);
+    },
+    onUnauthorized: () {
+      if (!disposed) ref.read(authControllerProvider.notifier).sessionExpired();
     },
     onUnreachable: (e) {
       if (!disposed) {

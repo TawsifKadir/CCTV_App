@@ -42,20 +42,20 @@ class Activity {
   final String? environmentId;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'title': title,
-        'subtitle': subtitle,
-        'timestamp': timestamp.toIso8601String(),
-        'environmentId': environmentId,
-      };
+    'id': id,
+    'type': type.name,
+    'title': title,
+    'subtitle': subtitle,
+    'timestamp': timestamp.toIso8601String(),
+    'environmentId': environmentId,
+  };
 
   factory Activity.fromJson(Map<String, dynamic> j) => Activity(
-        id: j['id'] as String,
-        type: ActivityType.fromName(j['type'] as String?),
-        title: j['title'] as String? ?? '',
-        subtitle: j['subtitle'] as String?,
-        timestamp: DateTime.tryParse(j['timestamp'] as String? ?? '') ?? DateTime.now(),
-        environmentId: j['environmentId'] as String?,
-      );
+    id: j['id'] as String,
+    type: ActivityType.fromName(j['type'] as String?),
+    title: j['title'] as String? ?? '',
+    subtitle: j['subtitle'] as String?,
+    timestamp: DateTime.tryParse(j['timestamp'] as String? ?? '') ?? DateTime.now(),
+    environmentId: j['environmentId'] as String?,
+  );
 }

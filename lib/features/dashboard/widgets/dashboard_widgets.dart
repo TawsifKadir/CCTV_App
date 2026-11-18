@@ -46,7 +46,12 @@ class QuickActionTile extends StatelessWidget {
             child: Icon(icon, color: filled ? Colors.white : accent, size: 22),
           ),
           const SizedBox(height: Space.sm),
-          Text(label, style: t.titleSmall?.copyWith(color: fg), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: t.titleSmall?.copyWith(color: fg),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           Text(
             caption,
             style: t.bodySmall?.copyWith(color: filled ? Colors.white70 : null),
@@ -79,10 +84,7 @@ class ActivityTile extends StatelessWidget {
               Container(
                 width: 34,
                 height: 34,
-                decoration: BoxDecoration(
-                  color: activity.type.color.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: activity.type.color.withValues(alpha: 0.14), shape: BoxShape.circle),
                 child: Icon(activity.type.icon, size: 17, color: activity.type.color),
               ),
               if (!isLast) Expanded(child: Container(width: 1.5, color: p.border)),
@@ -97,7 +99,9 @@ class ActivityTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(activity.title, style: t.labelLarge, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(activity.title, style: t.labelLarge, overflow: TextOverflow.ellipsis),
+                      ),
                       const SizedBox(width: Space.xs),
                       Text(Fmt.relative(activity.timestamp), style: t.labelSmall),
                     ],

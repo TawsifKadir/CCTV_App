@@ -38,15 +38,11 @@ class RegistrationSuccessScreen extends StatelessWidget {
       if (onDevice) _row(context, 'Stored', 'On this device'),
       if (onDevice) _row(context, 'Status', outcome.record?.statusLabel ?? 'Sync pending'),
       if (!onDevice)
-        _row(
-          context,
-          'Live recognition',
-          switch (r!.liveWatchList) {
-            true => 'Active',
-            false => 'Pending',
-            null => 'Not reported',
-          },
-        ),
+        _row(context, 'Live recognition', switch (r!.liveWatchList) {
+          true => 'Active',
+          false => 'Pending',
+          null => 'Not reported',
+        }),
     ];
 
     final Widget banner;
@@ -57,7 +53,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
         title: 'Saved on this device',
         message: outcome.uncertain
             ? 'The server didn\'t confirm the registration. The employee is safe on this device, and the server '
-                'will be checked before it is uploaded again.'
+                  'will be checked before it is uploaded again.'
             : 'Employee saved on this device. Synchronization will resume when the server becomes available.',
       );
     } else if (delayed) {
@@ -86,9 +82,11 @@ class RegistrationSuccessScreen extends StatelessWidget {
                 children: [
                   AnimatedCheckmark(size: 104, color: color),
                   const SizedBox(height: Space.md),
-                  Text(onDevice ? 'Saved on this device' : 'Employee registered',
-                          style: t.headlineMedium, textAlign: TextAlign.center)
-                      .entrance(context, delay: const Duration(milliseconds: 350)),
+                  Text(
+                    onDevice ? 'Saved on this device' : 'Employee registered',
+                    style: t.headlineMedium,
+                    textAlign: TextAlign.center,
+                  ).entrance(context, delay: const Duration(milliseconds: 350)),
                   const SizedBox(height: Space.xs),
                   Text(
                     onDevice
@@ -204,10 +202,7 @@ class _AnimatedCheckmarkState extends State<AnimatedCheckmark> with SingleTicker
     return Semantics(
       label: 'Success',
       child: RepaintBoundary(
-        child: CustomPaint(
-          size: Size.square(widget.size * 1.5),
-          painter: _CheckPainter(_c, widget.color),
-        ),
+        child: CustomPaint(size: Size.square(widget.size * 1.5), painter: _CheckPainter(_c, widget.color)),
       ),
     );
   }

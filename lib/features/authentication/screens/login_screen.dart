@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_constants.dart';
-import '../../../core/routing/routes.dart';
+import '../../../core/config/app_features.dart';
 import '../../../core/services/providers.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/motion.dart';
-import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_feedback.dart';
 import '../../../core/widgets/app_inputs.dart';
+import '../../connectivity/app_features_provider.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/dev_login_tools.dart';
 
+/// Sign-in against `POST /api/auth/login` on the active environment.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -24,15 +23,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _email = TextEditingController(text: ref.read(authRepositoryProvider).rememberedEmail ?? '');
+  late final _username = TextEditingController(text: ref.read(authRepositoryProvider).rememberedUsername ?? '');
   final _password = TextEditingController();
   bool _remember = true;
   bool _loading = false;
   String? _error;
+  late final String? _notice = ref.read(authControllerProvider.notifier).takeSignOutReason();
 
   @override
   void dispose() {
-    _email.dispose();
+    _username.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -46,8 +46,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider.notifier).login(_email.text, _password.text, remember: _remember);
-      // The router redirects automatically once signed in.
+      await ref.read(authControllerProvider.notifier).login(_username.text, _password.text, remember: _remember);
+      // The router redirects to the dashboard once signed in.
     } catch (e) {
       if (mounted) setState(() => _error = friendlyAuthError(e));
     } finally {
@@ -55,85 +55,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _fillDemo() {
-    setState(() {
-      _email.text = AppConstants.demoEmail;
-      _password.text = AppConstants.demoPassword;
-      _error = null;
-    });
-  }
-
-  Future<void> _forgotPassword() async {
-    final controller = TextEditingController(text: _email.text);
-    final formKey = GlobalKey<FormState>();
-    final sent = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        var busy = false;
-        return StatefulBuilder(
-          builder: (ctx, setLocal) => AlertDialog(
-            title: const Text('Reset password'),
-            content: SizedBox(
-              width: 380,
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Enter your account email and we will send password reset instructions.',
-                      style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: ctx.palette.textMuted),
-                    ),
-                    const SizedBox(height: Space.md),
-                    AppTextField(
-                      label: 'Email address',
-                      controller: controller,
-                      icon: Icons.mail_outline_rounded,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: Validators.email,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actionsPadding: const EdgeInsets.fromLTRB(Space.lg, 0, Space.lg, Space.lg),
-            actions: [
-              AppSecondaryButton(label: 'Cancel', expand: false, height: 46, onPressed: () => Navigator.pop(ctx, false)),
-              AppPrimaryButton(
-                label: 'Send link',
-                expand: false,
-                height: 46,
-                loading: busy,
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  setLocal(() => busy = true);
-                  await ref.read(authRepositoryProvider).requestPasswordReset(controller.text);
-                  if (ctx.mounted) Navigator.pop(ctx, true);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-    controller.dispose();
-    if (sent == true && mounted) {
-      showAppSnack(
-        context,
-        'If an account exists, reset instructions have been sent. (Demo mode: no email is actually sent.)',
-        type: SnackType.success,
-      );
+  void _demo(String username, String password) {
+    try {
+      ref.read(authControllerProvider.notifier).loginDemo(username, password);
+    } catch (e) {
+      setState(() => _error = friendlyAuthError(e));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final p = context.palette;
+    // Compile-time constant first: in production builds the developer
+    // widgets (and the credential strings) are removed by the compiler.
+    final devTools = !kProductionBuild && ref.watch(appFeaturesProvider).adminMode;
     return AuthLayout(
       title: 'Welcome back',
       subtitle: 'Sign in to continue managing enrollments.',
+      footer: devTools ? const DevEnvironmentPicker() : null,
       child: AutofillGroup(
         child: Form(
           key: _formKey,
@@ -141,23 +80,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AnimatedSize(
-                duration: context.motion(Motion.medium),
-                child: _error == null
-                    ? const SizedBox(width: double.infinity)
-                    : Padding(
+                // Never zero: AnimatedSize with a zero duration re-lays itself out
+                // during layout (a framework assertion) when reduced motion is on.
+                duration: context.reduceMotion ? const Duration(milliseconds: 1) : Motion.medium,
+                child: _error != null
+                    ? Padding(
                         padding: const EdgeInsets.only(bottom: Space.md),
-                        child: AppBanner(title: 'Sign-in failed', message: _error!),
-                      ),
+                        child: AppBanner(key: const Key('login-error'), title: 'Sign-in failed', message: _error!),
+                      )
+                    : _notice != null
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: Space.md),
+                        child: AppBanner(type: SnackType.info, message: _notice),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
               AppTextField(
-                fieldKey: const Key('login-email'),
-                label: 'Email address',
-                hint: 'you@company.com',
-                controller: _email,
-                icon: Icons.mail_outline_rounded,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email, AutofillHints.username],
-                validator: Validators.email,
+                fieldKey: const Key('login-username'),
+                label: 'Username',
+                hint: 'Your username',
+                controller: _username,
+                icon: Icons.person_outline_rounded,
+                enabled: !_loading,
+                autofillHints: const [AutofillHints.username],
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Username is required' : null,
               ),
               const SizedBox(height: Space.md),
               AppPasswordField(
@@ -169,17 +115,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
               ),
               const SizedBox(height: Space.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppCheckboxTile(
-                      value: _remember,
-                      onChanged: (v) => setState(() => _remember = v),
-                      child: Text('Remember me', style: t.bodyMedium),
-                    ),
-                  ),
-                  AppLinkButton(label: 'Forgot password?', onPressed: _forgotPassword),
-                ],
+              AppCheckboxTile(
+                value: _remember,
+                onChanged: (v) => setState(() => _remember = v),
+                child: Text('Remember me on this device', style: t.bodyMedium),
               ),
               const SizedBox(height: Space.lg),
               AppPrimaryButton(
@@ -189,41 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 loading: _loading,
                 onPressed: _submit,
               ),
-              const SizedBox(height: Space.md),
-              Container(
-                padding: const EdgeInsets.all(Space.md - 2),
-                decoration: BoxDecoration(
-                  color: p.accentTint.withValues(alpha: 0.6),
-                  borderRadius: Radii.mdAll,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.key_rounded, color: AppColors.peach, size: 20),
-                    const SizedBox(width: Space.sm),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: 'Demo account\n', style: t.labelMedium),
-                          TextSpan(
-                            text: '${AppConstants.demoEmail} · ${AppConstants.demoPassword}',
-                            style: t.bodySmall,
-                          ),
-                        ]),
-                      ),
-                    ),
-                    AppLinkButton(label: 'Use', onPressed: _fillDemo),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Space.lg),
-              Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text("Don't have an account?", style: t.bodyMedium?.copyWith(color: p.textMuted)),
-                  AppLinkButton(label: 'Create one', onPressed: () => context.go(Routes.register)),
-                ],
-              ),
+              if (devTools) ...[const SizedBox(height: Space.md), DemoLoginCard(busy: _loading, onContinue: _demo)],
             ],
           ),
         ),

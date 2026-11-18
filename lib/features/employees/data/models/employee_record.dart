@@ -45,10 +45,10 @@ enum RecordFilter {
   bool get isLocal => this == localOnly || this == pending || this == failed;
 
   bool matches(SyncStatus s) => switch (this) {
-        RecordFilter.all => true,
-        RecordFilter.onServer => s == SyncStatus.synced,
-        RecordFilter.localOnly => s == SyncStatus.localOnly,
-        RecordFilter.pending => s == SyncStatus.pendingSync || s == SyncStatus.syncing,
-        RecordFilter.failed => s == SyncStatus.failed,
-      };
+    RecordFilter.all => true,
+    RecordFilter.onServer => s == SyncStatus.synced,
+    RecordFilter.localOnly => s == SyncStatus.localOnly,
+    RecordFilter.pending => s == SyncStatus.pendingSync || s == SyncStatus.syncing,
+    RecordFilter.failed => s == SyncStatus.failed,
+  };
 }

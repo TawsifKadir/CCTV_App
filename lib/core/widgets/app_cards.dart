@@ -152,21 +152,30 @@ class AppStatCard extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: loading
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.4, color: accent),
-                    )
+                  ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: accent))
                   : value == null
-                      ? Text('—', style: t.headlineLarge?.copyWith(color: muted, height: 1))
-                      : AnimatedCount(value: value!, style: t.headlineLarge?.copyWith(color: fg, height: 1)),
+                  ? Text('—', style: t.headlineLarge?.copyWith(color: muted, height: 1))
+                  : AnimatedCount(
+                      value: value!,
+                      style: t.headlineLarge?.copyWith(color: fg, height: 1),
+                    ),
             ),
           ),
           const SizedBox(height: Space.xxs),
-          Text(label, style: t.labelMedium?.copyWith(color: fg), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            style: t.labelMedium?.copyWith(color: fg),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           if (caption != null) ...[
             const SizedBox(height: 2),
-            Text(caption!, style: t.bodySmall?.copyWith(color: muted), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              caption!,
+              style: t.bodySmall?.copyWith(color: muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ],
       ),
@@ -196,10 +205,7 @@ class AppPill extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 3 : 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(Radii.pill),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(Radii.pill)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

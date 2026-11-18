@@ -50,7 +50,10 @@ class AppSectionHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(actionLabel!, style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w600)),
+                  Text(
+                    actionLabel!,
+                    style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(width: 2),
                   const Icon(Icons.chevron_right_rounded, size: 18),
                 ],
@@ -64,13 +67,7 @@ class AppSectionHeader extends StatelessWidget {
 
 /// Large page title used at the top of top-level screens.
 class AppPageHeader extends StatelessWidget {
-  const AppPageHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.actions = const [],
-    this.leading,
-  });
+  const AppPageHeader({super.key, required this.title, this.subtitle, this.actions = const [], this.leading});
 
   final String title;
   final String? subtitle;
@@ -108,13 +105,7 @@ class AppPageHeader extends StatelessWidget {
 
 /// Scrollable page body with responsive padding and max width.
 class AppPage extends StatelessWidget {
-  const AppPage({
-    super.key,
-    required this.children,
-    this.maxWidth = 1240,
-    this.controller,
-    this.bottomPadding,
-  });
+  const AppPage({super.key, required this.children, this.maxWidth = 1240, this.controller, this.bottomPadding});
 
   final List<Widget> children;
   final double maxWidth;
@@ -127,12 +118,7 @@ class AppPage extends StatelessWidget {
     final bottomNavSpace = context.useSidebar ? Space.xl : 120.0;
     return SingleChildScrollView(
       controller: controller,
-      padding: EdgeInsets.fromLTRB(
-        pad,
-        context.isMobile ? Space.md : Space.xl,
-        pad,
-        bottomPadding ?? bottomNavSpace,
-      ),
+      padding: EdgeInsets.fromLTRB(pad, context.isMobile ? Space.md : Space.xl, pad, bottomPadding ?? bottomNavSpace),
       child: MaxWidthBox(
         maxWidth: maxWidth,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
@@ -153,28 +139,20 @@ class AppBackgroundDecor extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(child: ColoredBox(color: p.background)),
-        Positioned(
-          top: -120,
-          right: -80,
-          child: _blob(280, AppColors.peach.withValues(alpha: 0.10)),
-        ),
-        Positioned(
-          bottom: -140,
-          left: -100,
-          child: _blob(320, p.backgroundAlt.withValues(alpha: 0.9)),
-        ),
+        Positioned(top: -120, right: -80, child: _blob(280, AppColors.peach.withValues(alpha: 0.10))),
+        Positioned(bottom: -140, left: -100, child: _blob(320, p.backgroundAlt.withValues(alpha: 0.9))),
         Positioned.fill(child: child),
       ],
     );
   }
 
   Widget _blob(double size, Color color) => IgnorePointer(
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-      );
+    child: Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    ),
+  );
 }
 
 /// Label/value pair used in detail views.
@@ -194,10 +172,7 @@ class InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 18, color: p.textMuted),
-            const SizedBox(width: Space.sm),
-          ],
+          if (icon != null) ...[Icon(icon, size: 18, color: p.textMuted), const SizedBox(width: Space.sm)],
           Expanded(
             flex: 2,
             child: Text(label, style: t.bodyMedium?.copyWith(color: p.textMuted)),
@@ -209,39 +184,6 @@ class InfoRow extends StatelessWidget {
               (value == null || value!.isEmpty) ? '—' : value!,
               style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Notice that operator sign-in is a demo (the backend has no auth API).
-class DemoNotice extends StatelessWidget {
-  const DemoNotice({super.key, this.compact = false});
-
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final fg = context.onTint(AppColors.warning);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: Space.sm, vertical: compact ? 6 : Space.xs),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(Radii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.science_outlined, size: 15, color: fg),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              compact ? 'Demo sign-in' : 'Operator sign-in is a local demo · employee data comes from the backend',
-              style: t.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w600),
             ),
           ),
         ],

@@ -15,13 +15,7 @@ import '../providers/employee_providers.dart';
 /// * On the web, if the backend sends no CORS headers for photos, the
 ///   browser falls back to a plain `<img>` element.
 class EmployeeAvatar extends ConsumerWidget {
-  const EmployeeAvatar({
-    super.key,
-    required this.record,
-    this.size = 52,
-    this.radius,
-    this.heroTag,
-  });
+  const EmployeeAvatar({super.key, required this.record, this.size = 52, this.radius, this.heroTag});
 
   final EmployeeRecord record;
   final double size;
@@ -71,7 +65,10 @@ class EmployeeAvatar extends ConsumerWidget {
         );
       }
     }
-    content = ClipRRect(borderRadius: r, child: SizedBox(width: size, height: size, child: content));
+    content = ClipRRect(
+      borderRadius: r,
+      child: SizedBox(width: size, height: size, child: content),
+    );
     if (heroTag != null) content = Hero(tag: heroTag!, child: content);
     return Semantics(image: true, label: 'Photo of ${record.name}', child: content);
   }

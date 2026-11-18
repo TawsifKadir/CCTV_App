@@ -45,10 +45,10 @@ dependencies:
   uuid: ^4.6.0
   intl: ^0.20.3
   # Pinned: 7.1+ uses an iOS 26 SDK API (NWPath.isUltraConstrained) that breaks Xcode 16 builds.
-  crypto: ^3.0.8
   dio: ^5.11.1
   # Pinned: 7.1+ uses an iOS 26 SDK API (NWPath.isUltraConstrained) that breaks Xcode 16 builds.
   connectivity_plus: 7.0.0
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:

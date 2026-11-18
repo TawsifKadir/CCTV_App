@@ -45,28 +45,53 @@ class SyncScreen extends ConsumerWidget {
     final connection = _ConnectionCard(status: status, showEnvironment: features.environmentIndicator);
     final offline = !status.isOnline && counts.awaiting > 0 ? _OfflineCard(pending: counts.awaiting) : null;
 
-    final stats = LayoutBuilder(builder: (context, c) {
-      final cols = c.maxWidth >= 720 ? 5 : 2;
-      final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
-      final items = [
-        AppStatCard(label: 'On this device', value: counts.total, icon: Icons.smartphone_rounded, caption: 'Registered here'),
-        AppStatCard(label: 'On server', value: counts.synced, icon: Icons.cloud_done_outlined, accent: AppColors.success, caption: 'Synchronized'),
-        AppStatCard(label: 'Pending', value: counts.pending + counts.localOnly, icon: Icons.cloud_upload_outlined, accent: AppColors.info, caption: 'Waiting to upload'),
-        AppStatCard(
-          label: 'Failed',
-          value: counts.failed,
-          icon: Icons.error_outline_rounded,
-          accent: AppColors.error,
-          caption: counts.needsReview > 0 ? '${counts.needsReview} need review' : 'Safe on device',
-        ),
-        AppStatCard(label: 'Syncing', value: counts.syncing, icon: Icons.sync_rounded, accent: AppColors.peachSoft, caption: 'In progress'),
-      ];
-      return Wrap(
-        spacing: Space.md,
-        runSpacing: Space.md,
-        children: [for (final i in items) SizedBox(width: w, child: i)],
-      );
-    });
+    final stats = LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 720 ? 5 : 2;
+        final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
+        final items = [
+          AppStatCard(
+            label: 'On this device',
+            value: counts.total,
+            icon: Icons.smartphone_rounded,
+            caption: 'Registered here',
+          ),
+          AppStatCard(
+            label: 'On server',
+            value: counts.synced,
+            icon: Icons.cloud_done_outlined,
+            accent: AppColors.success,
+            caption: 'Synchronized',
+          ),
+          AppStatCard(
+            label: 'Pending',
+            value: counts.pending + counts.localOnly,
+            icon: Icons.cloud_upload_outlined,
+            accent: AppColors.info,
+            caption: 'Waiting to upload',
+          ),
+          AppStatCard(
+            label: 'Failed',
+            value: counts.failed,
+            icon: Icons.error_outline_rounded,
+            accent: AppColors.error,
+            caption: counts.needsReview > 0 ? '${counts.needsReview} need review' : 'Safe on device',
+          ),
+          AppStatCard(
+            label: 'Syncing',
+            value: counts.syncing,
+            icon: Icons.sync_rounded,
+            accent: AppColors.peachSoft,
+            caption: 'In progress',
+          ),
+        ];
+        return Wrap(
+          spacing: Space.md,
+          runSpacing: Space.md,
+          children: [for (final i in items) SizedBox(width: w, child: i)],
+        );
+      },
+    );
 
     final p = sync.progress;
     final actions = AppCard(
@@ -83,37 +108,45 @@ class SyncScreen extends ConsumerWidget {
               child: LinearProgressIndicator(value: p.done / p.total, minHeight: 4),
             ),
             const SizedBox(height: 4),
-            Text(p.current == null ? 'Finishing…' : 'Uploading ${p.current}…', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              p.current == null ? 'Finishing…' : 'Uploading ${p.current}…',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
           const SizedBox(height: Space.sm),
-          Row(children: [
-            Expanded(
-              child: AppSecondaryButton(
-                key: const Key('retry-failed'),
-                label: 'Retry failed',
-                icon: Icons.replay_rounded,
-                height: 46,
-                onPressed: counts.failed == 0 || sync.running
-                    ? null
-                    : () => runSyncNow(context, ref, selection: SyncSelection.failedOnly),
+          Row(
+            children: [
+              Expanded(
+                child: AppSecondaryButton(
+                  key: const Key('retry-failed'),
+                  label: 'Retry failed',
+                  icon: Icons.replay_rounded,
+                  height: 46,
+                  onPressed: counts.failed == 0 || sync.running
+                      ? null
+                      : () => runSyncNow(context, ref, selection: SyncSelection.failedOnly),
+                ),
               ),
-            ),
-            const SizedBox(width: Space.sm),
-            Expanded(
-              child: AppSecondaryButton(
-                key: const Key('refresh-connection'),
-                label: 'Check connection',
-                icon: Icons.wifi_tethering_rounded,
-                height: 46,
-                variant: AppSecondaryVariant.outline,
-                loading: status.checking,
-                onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: AppSecondaryButton(
+                  key: const Key('refresh-connection'),
+                  label: 'Check connection',
+                  icon: Icons.wifi_tethering_rounded,
+                  height: 46,
+                  variant: AppSecondaryVariant.outline,
+                  loading: status.checking,
+                  onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           if (!ref.watch(settingsProvider).autoSync) ...[
             const SizedBox(height: Space.sm),
-            Text('Automatic synchronization is off. Use Sync now to upload.', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Automatic synchronization is off. Use Sync now to upload.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ],
       ),
@@ -122,7 +155,10 @@ class SyncScreen extends ConsumerWidget {
     final pendingList = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppSectionHeader(title: 'Waiting to synchronize', subtitle: pending.isEmpty ? null : '${pending.length} on this device'),
+        AppSectionHeader(
+          title: 'Waiting to synchronize',
+          subtitle: pending.isEmpty ? null : '${pending.length} on this device',
+        ),
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
           child: pending.isEmpty
@@ -132,20 +168,22 @@ class SyncScreen extends ConsumerWidget {
                   title: 'All caught up',
                   message: 'Every employee registered on this device is on the server.',
                 )
-              : Column(children: [
-                  for (var i = 0; i < pending.length; i++) ...[
-                    EmployeeListTile(record: pending[i]),
-                    if (features.syncDiagnostics && pending[i].local!.syncError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 60, bottom: 6),
-                        child: Text(
-                          pending[i].local!.syncError!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
+              : Column(
+                  children: [
+                    for (var i = 0; i < pending.length; i++) ...[
+                      EmployeeListTile(record: pending[i]),
+                      if (features.syncDiagnostics && pending[i].local!.syncError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 60, bottom: 6),
+                          child: Text(
+                            pending[i].local!.syncError!,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
+                          ),
                         ),
-                      ),
-                    if (i < pending.length - 1) Divider(color: context.palette.border, height: 8),
+                      if (i < pending.length - 1) Divider(color: context.palette.border, height: 8),
+                    ],
                   ],
-                ]),
+                ),
         ),
       ],
     );
@@ -157,13 +195,20 @@ class SyncScreen extends ConsumerWidget {
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
           child: history.isEmpty
-              ? const AppEmptyState(compact: true, icon: Icons.history_rounded, title: 'No synchronizations yet', message: 'Runs will be listed here.')
-              : Column(children: [
-                  for (var i = 0; i < history.length && i < 20; i++) ...[
-                    _HistoryTile(run: history[i], detailed: features.syncDiagnostics),
-                    if (i < history.length - 1 && i < 19) Divider(color: context.palette.border, height: 8),
+              ? const AppEmptyState(
+                  compact: true,
+                  icon: Icons.history_rounded,
+                  title: 'No synchronizations yet',
+                  message: 'Runs will be listed here.',
+                )
+              : Column(
+                  children: [
+                    for (var i = 0; i < history.length && i < 20; i++) ...[
+                      _HistoryTile(run: history[i], detailed: features.syncDiagnostics),
+                      if (i < history.length - 1 && i < 19) Divider(color: context.palette.border, height: 8),
+                    ],
                   ],
-                ]),
+                ),
         ),
       ],
     );
@@ -176,16 +221,22 @@ class SyncScreen extends ConsumerWidget {
         child: AppPage(
           maxWidth: 1180,
           children: [
-            const AppPageHeader(title: 'Synchronization', subtitle: 'Upload employees saved on this device to the server.'),
+            const AppPageHeader(
+              title: 'Synchronization',
+              subtitle: 'Upload employees saved on this device to the server.',
+            ),
             if (offline != null) ...[offline, gap],
             stats,
             gap,
             if (wide)
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(flex: 3, child: Column(children: [pendingList, gap, historyCard])),
-                const SizedBox(width: Space.lg),
-                Expanded(flex: 2, child: Column(children: [connection, gap, actions])),
-              ])
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: Column(children: [pendingList, gap, historyCard])),
+                  const SizedBox(width: Space.lg),
+                  Expanded(flex: 2, child: Column(children: [connection, gap, actions])),
+                ],
+              )
             else ...[
               connection,
               gap,
@@ -213,35 +264,49 @@ class _ConnectionCard extends ConsumerWidget {
     final env = ref.watch(activeEnvironmentProvider);
     final (color, icon) = networkStatusStyle(status.status);
     Widget row(String label, String value) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(children: [
-            Expanded(child: Text(label, style: t.bodySmall?.copyWith(color: Colors.white60))),
-            Flexible(child: Text(value, textAlign: TextAlign.right, style: t.labelMedium?.copyWith(color: Colors.white))),
-          ]),
-        );
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label, style: t.bodySmall?.copyWith(color: Colors.white60)),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: t.labelMedium?.copyWith(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
     return AppCard(
       color: context.palette.nav,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(children: [
-            Icon(icon, color: color),
-            const SizedBox(width: Space.sm),
-            Expanded(child: Text('Connection', style: t.titleMedium?.copyWith(color: Colors.white))),
-            const ConnectivityPill(onDark: true),
-          ]),
+          Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: Text('Connection', style: t.titleMedium?.copyWith(color: Colors.white)),
+              ),
+              const ConnectivityPill(onDark: true),
+            ],
+          ),
           const SizedBox(height: Space.md),
           row('Device network', status.device.label),
-          row(
-            'Server',
-            switch (status.backendReachable) {
-              true => 'Reachable',
-              false => 'Not reachable',
-              null => 'Not checked yet',
-            },
-          ),
+          row('Server', switch (status.backendReachable) {
+            true => 'Reachable',
+            false => 'Not reachable',
+            null => 'Not checked yet',
+          }),
           if (showEnvironment) row('Environment', env.environmentName),
-          row('Last successful connection', status.lastSuccessAt == null ? 'Never' : Fmt.dateTime(status.lastSuccessAt)),
+          row(
+            'Last successful connection',
+            status.lastSuccessAt == null ? 'Never' : Fmt.dateTime(status.lastSuccessAt),
+          ),
           row('Last successful sync', _fmt(ref.watch(lastSuccessfulSyncProvider))),
         ],
       ),
@@ -308,7 +373,9 @@ class _HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final color = run.success ? AppColors.success : (run.uploaded + run.alreadySynced > 0 ? AppColors.warning : AppColors.error);
+    final color = run.success
+        ? AppColors.success
+        : (run.uploaded + run.alreadySynced > 0 ? AppColors.warning : AppColors.error);
     final summary = [
       '${run.attempted} attempted',
       '${run.uploaded} uploaded',
@@ -316,17 +383,22 @@ class _HistoryTile extends StatelessWidget {
       if (run.failed + run.uncertain > 0) '${run.failed + run.uncertain} failed',
       '${(run.duration.inMilliseconds / 1000).toStringAsFixed(1)}s',
     ].join(' · ');
-    final head = Row(children: [
-      Icon(run.success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded, color: color, size: 20),
-      const SizedBox(width: Space.sm),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${run.resultLabel} · ${run.trigger.label}', style: t.labelLarge),
-          Text(summary, style: t.bodySmall),
-        ]),
-      ),
-      Text(Fmt.dateTime(run.startedAt), style: t.labelSmall),
-    ]);
+    final head = Row(
+      children: [
+        Icon(run.success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded, color: color, size: 20),
+        const SizedBox(width: Space.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${run.resultLabel} · ${run.trigger.label}', style: t.labelLarge),
+              Text(summary, style: t.bodySmall),
+            ],
+          ),
+        ),
+        Text(Fmt.dateTime(run.startedAt), style: t.labelSmall),
+      ],
+    );
     if (!detailed || run.records.isEmpty) return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: head);
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),

@@ -16,23 +16,12 @@ class AppTheme {
 
   static TextTheme _textTheme(AppPalette p) {
     TextStyle heading(double size, FontWeight w, {double h = 1.2}) {
-      final base = TextStyle(
-        fontSize: size,
-        fontWeight: w,
-        height: h,
-        color: p.text,
-        letterSpacing: -0.2,
-      );
+      final base = TextStyle(fontSize: size, fontWeight: w, height: h, color: p.text, letterSpacing: -0.2);
       return useGoogleFonts ? GoogleFonts.poppins(textStyle: base) : base;
     }
 
     TextStyle body(double size, FontWeight w, {Color? c, double h = 1.45}) {
-      final base = TextStyle(
-        fontSize: size,
-        fontWeight: w,
-        height: h,
-        color: c ?? p.text,
-      );
+      final base = TextStyle(fontSize: size, fontWeight: w, height: h, color: c ?? p.text);
       return useGoogleFonts ? GoogleFonts.inter(textStyle: base) : base;
     }
 
@@ -110,37 +99,23 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.card,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: Space.md,
-          vertical: Space.md,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.md),
         hintStyle: textTheme.bodyMedium?.copyWith(color: p.textMuted),
         labelStyle: textTheme.bodyMedium?.copyWith(color: p.textMuted),
-        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-          color: AppColors.peach,
-          fontWeight: FontWeight.w600,
-        ),
+        floatingLabelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w600),
         errorStyle: textTheme.bodySmall?.copyWith(color: AppColors.error),
         border: inputBorder,
         enabledBorder: inputBorder,
-        focusedBorder: inputBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.peach, width: 1.6),
-        ),
-        errorBorder: inputBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.error, width: 1.2),
-        ),
-        focusedErrorBorder: inputBorder.copyWith(
-          borderSide: const BorderSide(color: AppColors.error, width: 1.6),
-        ),
+        focusedBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.peach, width: 1.6)),
+        errorBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.2)),
+        focusedErrorBorder: inputBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.6)),
         prefixIconColor: p.textMuted,
         suffixIconColor: p.textMuted,
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         side: BorderSide(color: p.textMuted, width: 1.4),
-        fillColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? AppColors.peach : null,
-        ),
+        fillColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.peach : null),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -174,9 +149,7 @@ class AppTheme {
         backgroundColor: p.card,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xl)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Radii.xl))),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

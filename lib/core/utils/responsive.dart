@@ -41,12 +41,7 @@ extension ResponsiveContext on BuildContext {
 }
 
 /// Picks a value based on the available width.
-T responsiveValue<T>(
-  BuildContext context, {
-  required T mobile,
-  T? tablet,
-  T? desktop,
-}) {
+T responsiveValue<T>(BuildContext context, {required T mobile, T? tablet, T? desktop}) {
   switch (context.screenSize) {
     case ScreenSize.desktop:
       return desktop ?? tablet ?? mobile;

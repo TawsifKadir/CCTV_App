@@ -103,14 +103,14 @@ class EnvironmentConfig {
   }
 
   EnvironmentConfig copyWith({String? baseUrl, String? notes}) => EnvironmentConfig(
-        environmentId: environmentId,
-        environmentName: environmentName,
-        baseUrl: baseUrl ?? this.baseUrl,
-        apiPrefix: apiPrefix,
-        isProduction: isProduction,
-        allowDebugFeatures: allowDebugFeatures,
-        notes: notes ?? this.notes,
-      );
+    environmentId: environmentId,
+    environmentName: environmentName,
+    baseUrl: baseUrl ?? this.baseUrl,
+    apiPrefix: apiPrefix,
+    isProduction: isProduction,
+    allowDebugFeatures: allowDebugFeatures,
+    notes: notes ?? this.notes,
+  );
 
   @override
   bool operator ==(Object other) =>

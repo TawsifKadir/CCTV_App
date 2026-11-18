@@ -91,7 +91,8 @@ class RegistrationController extends AutoDisposeNotifier<RegistrationState> {
     final upload = ref.read(connectionStatusProvider).shouldAttemptServer;
     state = const RegistrationState(submitting: true, progress: 0);
 
-    RegistrationOutcome outcome({RegistrationResult? result, LocalEmployee? record, bool uncertain = false}) => RegistrationOutcome(
+    RegistrationOutcome outcome({RegistrationResult? result, LocalEmployee? record, bool uncertain = false}) =>
+        RegistrationOutcome(
           result: result,
           record: record,
           uncertain: uncertain,
@@ -151,5 +152,6 @@ class RegistrationController extends AutoDisposeNotifier<RegistrationState> {
   }
 }
 
-final registrationControllerProvider =
-    AutoDisposeNotifierProvider<RegistrationController, RegistrationState>(RegistrationController.new);
+final registrationControllerProvider = AutoDisposeNotifierProvider<RegistrationController, RegistrationState>(
+  RegistrationController.new,
+);

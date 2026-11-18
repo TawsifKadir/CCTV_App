@@ -11,7 +11,7 @@ final appMessengerKey = GlobalKey<ScaffoldMessengerState>();
 /// Shows subtle toasts without repeating the same message.
 class AppNotifier {
   AppNotifier({GlobalKey<ScaffoldMessengerState>? key, this.dedupeWindow = const Duration(seconds: 20)})
-      : _key = key ?? appMessengerKey;
+    : _key = key ?? appMessengerKey;
 
   final GlobalKey<ScaffoldMessengerState> _key;
   final Duration dedupeWindow;
@@ -38,17 +38,21 @@ class AppNotifier {
     final width = MediaQuery.maybeSizeOf(messenger.context)?.width ?? 0;
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        width: width > 600 ? 460 : null,
-        duration: Duration(seconds: actionLabel == null ? 4 : 7),
-        action: actionLabel == null ? null : SnackBarAction(label: actionLabel, textColor: AppColors.peach, onPressed: onAction ?? () {}),
-        content: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: Space.sm),
-            Expanded(child: Text(message)),
-          ],
+      ..showSnackBar(
+        SnackBar(
+          width: width > 600 ? 460 : null,
+          duration: Duration(seconds: actionLabel == null ? 4 : 7),
+          action: actionLabel == null
+              ? null
+              : SnackBarAction(label: actionLabel, textColor: AppColors.peach, onPressed: onAction ?? () {}),
+          content: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: Space.sm),
+              Expanded(child: Text(message)),
+            ],
+          ),
         ),
-      ));
+      );
   }
 }

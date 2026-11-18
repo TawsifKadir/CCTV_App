@@ -21,6 +21,7 @@ import '../environments/presentation/providers/environment_providers.dart';
 import '../registration/domain/employee_photo.dart';
 import '../registration/domain/employee_registration.dart';
 import '../sync/presentation/sync_providers.dart';
+import '../demo/demo_backend.dart';
 import 'data/network_log.dart';
 
 /// Admin-only diagnostics. This screen's route is only registered in admin
@@ -42,7 +43,10 @@ class DiagnosticsScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(pad, context.isMobile ? Space.md : Space.xl, pad, 0),
-                child: const AppPageHeader(title: 'Diagnostics', subtitle: 'Developer tools — not available in production builds.'),
+                child: const AppPageHeader(
+                  title: 'Diagnostics',
+                  subtitle: 'Developer tools — not available in production builds.',
+                ),
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: pad),
@@ -51,12 +55,15 @@ class DiagnosticsScreen extends ConsumerWidget {
                   tabAlignment: TabAlignment.start,
                   indicatorColor: AppColors.peach,
                   labelColor: AppColors.peach,
-                  tabs: [Tab(text: 'Network'), Tab(text: 'Sync log'), Tab(text: 'Local data'), Tab(text: 'Tools')],
+                  tabs: [
+                    Tab(text: 'Network'),
+                    Tab(text: 'Sync log'),
+                    Tab(text: 'Local data'),
+                    Tab(text: 'Tools'),
+                  ],
                 ),
               ),
-              const Expanded(
-                child: TabBarView(children: [_NetworkTab(), _SyncLogTab(), _DataTab(), _ToolsTab()]),
-              ),
+              const Expanded(child: TabBarView(children: [_NetworkTab(), _SyncLogTab(), _DataTab(), _ToolsTab()])),
             ],
           ),
         ),
@@ -80,12 +87,24 @@ class _NetworkTab extends ConsumerWidget {
       builder: (context, entries, _) => ListView(
         padding: _tabPadding(context),
         children: [
-          Row(children: [
-            Expanded(child: Text('${entries.length} recent requests (bodies of uploaded photos are never kept)', style: t.bodySmall)),
-            TextButton(onPressed: log.clear, child: const Text('Clear')),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${entries.length} recent requests (bodies of uploaded photos are never kept)',
+                  style: t.bodySmall,
+                ),
+              ),
+              TextButton(onPressed: log.clear, child: const Text('Clear')),
+            ],
+          ),
           if (entries.isEmpty)
-            const AppEmptyState(compact: true, icon: Icons.http_rounded, title: 'No requests yet', message: 'API calls will appear here.'),
+            const AppEmptyState(
+              compact: true,
+              icon: Icons.http_rounded,
+              title: 'No requests yet',
+              message: 'API calls will appear here.',
+            ),
           for (final e in entries)
             Card(
               margin: const EdgeInsets.only(bottom: Space.xs),
@@ -126,21 +145,31 @@ class _SyncLogTab extends ConsumerWidget {
       padding: _tabPadding(context),
       children: [
         if (runs.isEmpty)
-          const AppEmptyState(compact: true, icon: Icons.history_rounded, title: 'No sync runs', message: 'Runs and per-record outcomes appear here.'),
+          const AppEmptyState(
+            compact: true,
+            icon: Icons.history_rounded,
+            title: 'No sync runs',
+            message: 'Runs and per-record outcomes appear here.',
+          ),
         for (final r in runs)
           AppCard(
             padding: const EdgeInsets.all(Space.md),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${r.resultLabel} · ${r.trigger.label} · ${Fmt.dateTime(r.startedAt)}', style: t.labelLarge),
-              Text(
-                'attempted ${r.attempted}, uploaded ${r.uploaded}, already ${r.alreadySynced}, failed ${r.failed}, '
-                'uncertain ${r.uncertain}${r.aborted ? ', aborted' : ''} · ${r.duration.inMilliseconds} ms',
-                style: t.bodySmall,
-              ),
-              for (final rec in r.records)
-                Text('• ${rec.name} [${rec.localId.substring(0, 8)}]: ${rec.outcome}${rec.detail == null ? '' : ' — ${rec.detail}'}',
-                    style: t.bodySmall?.copyWith(fontFamily: 'monospace')),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${r.resultLabel} · ${r.trigger.label} · ${Fmt.dateTime(r.startedAt)}', style: t.labelLarge),
+                Text(
+                  'attempted ${r.attempted}, uploaded ${r.uploaded}, already ${r.alreadySynced}, failed ${r.failed}, '
+                  'uncertain ${r.uncertain}${r.aborted ? ', aborted' : ''} · ${r.duration.inMilliseconds} ms',
+                  style: t.bodySmall,
+                ),
+                for (final rec in r.records)
+                  Text(
+                    '• ${rec.name} [${rec.localId.substring(0, 8)}]: ${rec.outcome}${rec.detail == null ? '' : ' — ${rec.detail}'}',
+                    style: t.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  ),
+              ],
+            ),
           ),
       ].expand((w) => [w, const SizedBox(height: Space.sm)]).toList(),
     );
@@ -162,14 +191,19 @@ class _DataTab extends ConsumerWidget {
       padding: _tabPadding(context),
       children: [
         AppCard(
-          child: Column(children: [
-            InfoRow(label: 'Environment', value: '${env.environmentId} · ${env.baseUrl}'),
-            InfoRow(label: 'Local records', value: '${counts.total} (synced ${counts.synced}, awaiting ${counts.awaiting})'),
-            InfoRow(label: 'Local photos', value: Fmt.bytes(repo.photoBytesTotal)),
-            InfoRow(label: 'Cached server records', value: '${cache.count}'),
-            InfoRow(label: 'Cache last refreshed', value: Fmt.dateTime(cache.lastRefresh)),
-            InfoRow(label: 'Storage', value: 'Hive: app files (mobile) / IndexedDB (web)'),
-          ]),
+          child: Column(
+            children: [
+              InfoRow(label: 'Environment', value: '${env.environmentId} · ${env.baseUrl}'),
+              InfoRow(
+                label: 'Local records',
+                value: '${counts.total} (synced ${counts.synced}, awaiting ${counts.awaiting})',
+              ),
+              InfoRow(label: 'Local photos', value: Fmt.bytes(repo.photoBytesTotal)),
+              InfoRow(label: 'Cached server records', value: '${cache.count}'),
+              InfoRow(label: 'Cache last refreshed', value: Fmt.dateTime(cache.lastRefresh)),
+              InfoRow(label: 'Storage', value: 'Hive: app files (mobile) / IndexedDB (web)'),
+            ],
+          ),
         ),
         const SizedBox(height: Space.md),
         Text('Local records', style: t.titleMedium),
@@ -179,12 +213,16 @@ class _DataTab extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: Space.xs),
             child: ExpansionTile(
               title: Text(e.name, style: t.labelLarge),
-              subtitle: Text('${e.syncStatus.code}${e.needsReconciliation ? ' · NEEDS_REVIEW' : ''}${e.isTestData ? ' · TEST' : ''}',
-                  style: t.labelSmall),
+              subtitle: Text(
+                '${e.syncStatus.code}${e.needsReconciliation ? ' · NEEDS_REVIEW' : ''}${e.isTestData ? ' · TEST' : ''}',
+                style: t.labelSmall,
+              ),
               childrenPadding: const EdgeInsets.all(Space.md),
               children: [
-                SelectableText(const JsonEncoder.withIndent('  ').convert(e.toJson()),
-                    style: t.bodySmall?.copyWith(fontFamily: 'monospace')),
+                SelectableText(
+                  const JsonEncoder.withIndent('  ').convert(e.toJson()),
+                  style: t.bodySmall?.copyWith(fontFamily: 'monospace'),
+                ),
               ],
             ),
           ),
@@ -219,8 +257,11 @@ class _ToolsTab extends ConsumerWidget {
       );
     }
     if (context.mounted) {
-      showAppSnack(context, 'Created 3 test records. They are never uploaded; syncing them shows the failure flow.',
-          type: SnackType.success);
+      showAppSnack(
+        context,
+        'Created 3 test records. They are never uploaded; syncing them shows the failure flow.',
+        type: SnackType.success,
+      );
     }
   }
 
@@ -229,7 +270,8 @@ class _ToolsTab extends ConsumerWidget {
     final ok = await showAppConfirmDialog(
       context,
       title: 'Clear all local employee data?',
-      message: 'Deletes ${counts.total} local records (${counts.awaiting} not yet on the server — they will be lost), '
+      message:
+          'Deletes ${counts.total} local records (${counts.awaiting} not yet on the server — they will be lost), '
           'their photos, cached server records and sync history for this environment.',
       confirmLabel: 'Clear',
       destructive: true,
@@ -250,80 +292,107 @@ class _ToolsTab extends ConsumerWidget {
     return ListView(
       padding: _tabPadding(context),
       children: [
+        if (ref.watch(isDemoSessionProvider))
+          AppCard(
+            child: StatefulBuilder(
+              builder: (context, setLocal) => SwitchListTile(
+                key: const Key('demo-server-down'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Simulate demo server unavailable'),
+                subtitle: const Text('Demo session only: test offline registration and sync recovery.'),
+                value: DemoBackendAdapter.serverDown,
+                onChanged: (v) {
+                  setLocal(() => DemoBackendAdapter.serverDown = v);
+                  ref.read(connectionStatusProvider.notifier).check();
+                },
+              ),
+            ),
+          ),
+        if (ref.watch(isDemoSessionProvider)) const SizedBox(height: Space.md),
         AppCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Connection', style: t.titleMedium),
-            InfoRow(label: 'Status', value: '${status.status.label} (device: ${status.device.label})'),
-            InfoRow(label: 'Consecutive failures', value: '${status.failures}'),
-            InfoRow(label: 'Last error', value: status.message),
-            const SizedBox(height: Space.sm),
-            Text('Check interval while online: ${settings.connectionCheckSeconds}s', style: t.labelMedium),
-            Slider(
-              key: const Key('interval-slider'),
-              value: settings.connectionCheckSeconds.toDouble(),
-              min: 10,
-              max: 300,
-              divisions: 29,
-              label: '${settings.connectionCheckSeconds}s',
-              onChanged: (v) => ref.read(settingsProvider.notifier).update((s) => s.copyWith(connectionCheckSeconds: v.round())),
-            ),
-            AppSecondaryButton(
-              label: 'Check now',
-              icon: Icons.wifi_tethering_rounded,
-              height: 44,
-              loading: status.checking,
-              onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
-            ),
-          ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Connection', style: t.titleMedium),
+              InfoRow(label: 'Status', value: '${status.status.label} (device: ${status.device.label})'),
+              InfoRow(label: 'Consecutive failures', value: '${status.failures}'),
+              InfoRow(label: 'Last error', value: status.message),
+              const SizedBox(height: Space.sm),
+              Text('Check interval while online: ${settings.connectionCheckSeconds}s', style: t.labelMedium),
+              Slider(
+                key: const Key('interval-slider'),
+                value: settings.connectionCheckSeconds.toDouble(),
+                min: 10,
+                max: 300,
+                divisions: 29,
+                label: '${settings.connectionCheckSeconds}s',
+                onChanged: (v) =>
+                    ref.read(settingsProvider.notifier).update((s) => s.copyWith(connectionCheckSeconds: v.round())),
+              ),
+              AppSecondaryButton(
+                label: 'Check now',
+                icon: Icons.wifi_tethering_rounded,
+                height: 44,
+                loading: status.checking,
+                onPressed: () => ref.read(connectionStatusProvider.notifier).check(),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: Space.md),
         AppCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Test data', style: t.titleMedium),
-            Text('Test records stay on this device and are never sent to the server.', style: t.bodySmall),
-            const SizedBox(height: Space.sm),
-            AppSecondaryButton(
-              key: const Key('create-test-records'),
-              label: 'Create 3 pending test records',
-              icon: Icons.science_outlined,
-              height: 44,
-              onPressed: () => _createTestRecords(context, ref),
-            ),
-            const SizedBox(height: Space.xs),
-            AppSecondaryButton(
-              label: 'Reset failed records to pending',
-              icon: Icons.restart_alt_rounded,
-              height: 44,
-              onPressed: () async {
-                final repo = ref.read(localEmployeeRepositoryProvider);
-                for (final e in repo.all().where((e) => e.syncStatus == SyncStatus.failed)) {
-                  await repo.update(e.localId, (x) => x.copyWith(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Test data', style: t.titleMedium),
+              Text('Test records stay on this device and are never sent to the server.', style: t.bodySmall),
+              const SizedBox(height: Space.sm),
+              AppSecondaryButton(
+                key: const Key('create-test-records'),
+                label: 'Create 3 pending test records',
+                icon: Icons.science_outlined,
+                height: 44,
+                onPressed: () => _createTestRecords(context, ref),
+              ),
+              const SizedBox(height: Space.xs),
+              AppSecondaryButton(
+                label: 'Reset failed records to pending',
+                icon: Icons.restart_alt_rounded,
+                height: 44,
+                onPressed: () async {
+                  final repo = ref.read(localEmployeeRepositoryProvider);
+                  for (final e in repo.all().where((e) => e.syncStatus == SyncStatus.failed)) {
+                    await repo.update(
+                      e.localId,
+                      (x) => x.copyWith(
                         syncStatus: SyncStatus.pendingSync,
                         permanentFailure: false,
                         nextRetryAt: () => null,
-                      ));
-                }
-              },
-            ),
-            const SizedBox(height: Space.xs),
-            AppSecondaryButton(
-              label: 'Clear cached server records',
-              icon: Icons.cleaning_services_outlined,
-              height: 44,
-              onPressed: () async {
-                await ref.read(serverEmployeeCacheProvider).clear();
-                ref.read(employeeRefresherProvider)();
-              },
-            ),
-            const SizedBox(height: Space.xs),
-            AppSecondaryButton(
-              label: 'Clear all local employee data',
-              icon: Icons.delete_forever_outlined,
-              variant: AppSecondaryVariant.danger,
-              height: 44,
-              onPressed: () => _clearAll(context, ref),
-            ),
-          ]),
+                      ),
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: Space.xs),
+              AppSecondaryButton(
+                label: 'Clear cached server records',
+                icon: Icons.cleaning_services_outlined,
+                height: 44,
+                onPressed: () async {
+                  await ref.read(serverEmployeeCacheProvider).clear();
+                  ref.read(employeeRefresherProvider)();
+                },
+              ),
+              const SizedBox(height: Space.xs),
+              AppSecondaryButton(
+                label: 'Clear all local employee data',
+                icon: Icons.delete_forever_outlined,
+                variant: AppSecondaryVariant.danger,
+                height: 44,
+                onPressed: () => _clearAll(context, ref),
+              ),
+            ],
+          ),
         ),
       ],
     );

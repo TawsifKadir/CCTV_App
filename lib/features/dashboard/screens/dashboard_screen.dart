@@ -40,7 +40,7 @@ class DashboardScreen extends ConsumerWidget {
     final features = ref.watch(appFeaturesProvider);
     final operator = ref.watch(authControllerProvider);
     final wide = context.screenWidth >= 1100;
-    final name = Fmt.firstName(operator?.fullName ?? 'there');
+    final name = Fmt.firstName(operator?.operator.fullName ?? 'there');
 
     final header = _Header(name: name, showEnvironment: features.environmentIndicator);
     const hero = _OverviewHero();
@@ -55,29 +55,36 @@ class DashboardScreen extends ConsumerWidget {
     final List<Widget> body = wide
         ? [
             header.entrance(context),
-            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                flex: 3,
-                child: Column(children: [
-                  hero.entrance(context, index: 1),
-                  gap,
-                  stats,
-                  gap,
-                  recent.entrance(context, index: 5),
-                  if (serverList != null) ...[gap, serverList],
-                ]),
-              ),
-              const SizedBox(width: Space.lg),
-              Expanded(
-                flex: 2,
-                child: Column(children: [
-                  syncCard.entrance(context, index: 2),
-                  gap,
-                  quick.entrance(context, index: 3),
-                  if (activity != null) ...[gap, activity],
-                ]),
-              ),
-            ]),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      hero.entrance(context, index: 1),
+                      gap,
+                      stats,
+                      gap,
+                      recent.entrance(context, index: 5),
+                      if (serverList != null) ...[gap, serverList],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Space.lg),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    children: [
+                      syncCard.entrance(context, index: 2),
+                      gap,
+                      quick.entrance(context, index: 3),
+                      if (activity != null) ...[gap, activity],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ]
         : [
             header.entrance(context),
@@ -193,17 +200,27 @@ class _OverviewHero extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: Text('Employee directory', style: t.titleMedium?.copyWith(color: Colors.white70), overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: Space.xs),
-            const ConnectivityPill(onDark: true),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Employee directory',
+                  style: t.titleMedium?.copyWith(color: Colors.white70),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: Space.xs),
+              const ConnectivityPill(onDark: true),
+            ],
+          ),
           const SizedBox(height: Space.md),
           figure,
           const SizedBox(height: Space.xs),
-          Text(message, key: const Key('hero-message'), style: t.bodyMedium?.copyWith(color: Colors.white70)),
+          Text(
+            message,
+            key: const Key('hero-message'),
+            style: t.bodyMedium?.copyWith(color: Colors.white70),
+          ),
           if (counts.awaiting > 0) ...[
             const SizedBox(height: 4),
             Text(
@@ -270,8 +287,8 @@ class _StatGrid extends ConsumerWidget {
         caption: o == null
             ? null
             : o.fromCache
-                ? (o.lastRefresh == null ? 'Unavailable' : 'Last updated ${Fmt.relative(o.lastRefresh)}')
-                : 'Live',
+            ? (o.lastRefresh == null ? 'Unavailable' : 'Last updated ${Fmt.relative(o.lastRefresh)}')
+            : 'Live',
         onTap: () => context.go(Routes.employees),
       ),
       AppStatCard(
@@ -302,21 +319,37 @@ class _StatGrid extends ConsumerWidget {
         onTap: () => context.go(Routes.sync),
       ),
       if (admin) ...[
-        _SourceCount(source: EnrollmentSource.photo, label: 'Photo uploads', icon: Icons.photo_outlined, accent: AppColors.peachSoft),
-        _SourceCount(source: EnrollmentSource.capture, label: 'Camera captures', icon: Icons.videocam_outlined, accent: AppColors.info),
+        _SourceCount(
+          source: EnrollmentSource.photo,
+          label: 'Photo uploads',
+          icon: Icons.photo_outlined,
+          accent: AppColors.peachSoft,
+        ),
+        _SourceCount(
+          source: EnrollmentSource.capture,
+          label: 'Camera captures',
+          icon: Icons.videocam_outlined,
+          accent: AppColors.info,
+        ),
       ],
     ];
-    return LayoutBuilder(builder: (context, c) {
-      final cols = c.maxWidth >= 720 ? (admin ? 3 : 4) : 2;
-      final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
-      return Wrap(
-        spacing: Space.md,
-        runSpacing: Space.md,
-        children: [
-          for (var i = 0; i < cards.length; i++) SizedBox(width: w, child: cards[i].entrance(context, index: i + 2)),
-        ],
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 720 ? (admin ? 3 : 4) : 2;
+        final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
+        return Wrap(
+          spacing: Space.md,
+          runSpacing: Space.md,
+          children: [
+            for (var i = 0; i < cards.length; i++)
+              SizedBox(
+                width: w,
+                child: cards[i].entrance(context, index: i + 2),
+              ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -356,42 +389,49 @@ class _SyncStatusCard extends ConsumerWidget {
     final headline = running
         ? 'Synchronizing…'
         : counts.awaiting == 0
-            ? 'Everything is synchronized'
-            : '${counts.awaiting} employee${counts.awaiting == 1 ? '' : 's'} waiting to sync';
+        ? 'Everything is synchronized'
+        : '${counts.awaiting} employee${counts.awaiting == 1 ? '' : 's'} waiting to sync';
     return AppCard(
       key: const Key('sync-status-card'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: Radii.smAll),
-              child: Icon(icon, color: color, size: 21),
-            ),
-            const SizedBox(width: Space.sm),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Synchronization', style: t.titleMedium),
-                Text(headline, style: t.bodySmall),
-              ]),
-            ),
-          ]),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: Radii.smAll),
+                child: Icon(icon, color: color, size: 21),
+              ),
+              const SizedBox(width: Space.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Synchronization', style: t.titleMedium),
+                    Text(headline, style: t.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: Space.sm),
           InfoRow(label: 'Connection', value: status.status.label),
           InfoRow(label: 'Last successful sync', value: lastSync == null ? 'Never' : Fmt.relative(lastSync)),
           if (counts.failed > 0) InfoRow(label: 'Failed', value: '${counts.failed} (safe on this device)'),
           const SizedBox(height: Space.sm),
-          Row(children: [
-            const Expanded(child: SyncNowButton(expand: true, height: 44)),
-            const SizedBox(width: Space.sm),
-            AppIconButton(
-              icon: Icons.open_in_new_rounded,
-              tooltip: 'Open synchronization',
-              onPressed: () => context.go(Routes.sync),
-            ),
-          ]),
+          Row(
+            children: [
+              const Expanded(child: SyncNowButton(expand: true, height: 44)),
+              const SizedBox(width: Space.sm),
+              AppIconButton(
+                icon: Icons.open_in_new_rounded,
+                tooltip: 'Open synchronization',
+                onPressed: () => context.go(Routes.sync),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -446,7 +486,9 @@ class _QuickActions extends ConsumerWidget {
             final s = ref.read(connectionStatusProvider);
             showAppSnack(
               context,
-              s.isOnline ? 'Connected to the server.' : 'Unable to reach the server. Your records are safe on this device.',
+              s.isOnline
+                  ? 'Connected to the server.'
+                  : 'Unable to reach the server. Your records are safe on this device.',
               type: s.isOnline ? SnackType.success : SnackType.warning,
             );
           },
@@ -456,15 +498,17 @@ class _QuickActions extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const AppSectionHeader(title: 'Quick actions'),
-        LayoutBuilder(builder: (context, c) {
-          final cols = c.maxWidth >= 640 ? 4 : 2;
-          final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
-          return Wrap(
-            spacing: Space.md,
-            runSpacing: Space.md,
-            children: [for (final t in tiles) SizedBox(width: w, child: t)],
-          );
-        }),
+        LayoutBuilder(
+          builder: (context, c) {
+            final cols = c.maxWidth >= 640 ? 4 : 2;
+            final w = (c.maxWidth - Space.md * (cols - 1)) / cols;
+            return Wrap(
+              spacing: Space.md,
+              runSpacing: Space.md,
+              children: [for (final t in tiles) SizedBox(width: w, child: t)],
+            );
+          },
+        ),
       ],
     );
   }
@@ -497,12 +541,14 @@ class _RecentRegistrations extends ConsumerWidget {
                   actionLabel: 'Register an employee',
                   onAction: () => context.go(Routes.enroll),
                 )
-              : Column(children: [
-                  for (var i = 0; i < items.length; i++) ...[
-                    EmployeeListTile(record: items[i]),
-                    if (i < items.length - 1) Divider(color: context.palette.border, height: 8),
+              : Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      EmployeeListTile(record: items[i]),
+                      if (i < items.length - 1) Divider(color: context.palette.border, height: 8),
+                    ],
                   ],
-                ]),
+                ),
         ),
       ],
     );
@@ -519,7 +565,8 @@ class _LatestOnServer extends ConsumerWidget {
     final o = overview.valueOrNull;
     final linked = ref.watch(linkedLocalByServerIdProvider);
     final items = [
-      for (final e in o?.latest ?? const <Employee>[]) EmployeeRecord(server: e, local: e.id == null ? null : linked[e.id]),
+      for (final e in o?.latest ?? const <Employee>[])
+        EmployeeRecord(server: e, local: e.id == null ? null : linked[e.id]),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -529,21 +576,28 @@ class _LatestOnServer extends ConsumerWidget {
           subtitle: o == null
               ? null
               : o.fromCache
-                  ? 'Saved copy · last updated ${Fmt.relative(o.lastRefresh)}'
-                  : 'First page, in server order',
+              ? 'Saved copy · last updated ${Fmt.relative(o.lastRefresh)}'
+              : 'First page, in server order',
         ),
         AppCard(
           padding: const EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
           child: o == null
               ? const Padding(padding: EdgeInsets.all(Space.xl), child: AppLoadingIndicator())
               : items.isEmpty
-                  ? const AppEmptyState(compact: true, icon: Icons.cloud_queue_rounded, title: 'No server records', message: 'Nothing loaded from the server yet.')
-                  : Column(children: [
-                      for (var i = 0; i < items.length; i++) ...[
-                        EmployeeListTile(record: items[i]),
-                        if (i < items.length - 1) Divider(color: context.palette.border, height: 8),
-                      ],
-                    ]),
+              ? const AppEmptyState(
+                  compact: true,
+                  icon: Icons.cloud_queue_rounded,
+                  title: 'No server records',
+                  message: 'Nothing loaded from the server yet.',
+                )
+              : Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      EmployeeListTile(record: items[i]),
+                      if (i < items.length - 1) Divider(color: context.palette.border, height: 8),
+                    ],
+                  ],
+                ),
         ),
       ],
     );
@@ -573,9 +627,12 @@ class _ActivityFeed extends ConsumerWidget {
                   title: 'No activity yet',
                   message: 'Registrations, syncs and environment changes made here will be listed.',
                 )
-              : Column(children: [
-                  for (var i = 0; i < items.length; i++) ActivityTile(activity: items[i], isLast: i == items.length - 1),
-                ]),
+              : Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      ActivityTile(activity: items[i], isLast: i == items.length - 1),
+                  ],
+                ),
         ),
       ],
     );

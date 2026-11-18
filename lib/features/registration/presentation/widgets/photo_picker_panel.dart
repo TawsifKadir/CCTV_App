@@ -40,9 +40,9 @@ class _PhotoPickerPanelState extends State<PhotoPickerPanel> {
   String? _localError;
 
   void _openCamera() => setState(() {
-        _localError = null;
-        _mode = _Mode.camera;
-      });
+    _localError = null;
+    _mode = _Mode.camera;
+  });
 
   Future<void> _upload() async {
     setState(() => _localError = null);
@@ -82,30 +82,36 @@ class _PhotoPickerPanelState extends State<PhotoPickerPanel> {
     final error = _localError ?? widget.errorText;
     final Widget body = switch (_mode) {
       _Mode.camera => FaceCaptureView(
-          key: const ValueKey('camera'),
-          preferFrontCamera: widget.preferFrontCamera,
-          onCaptured: _captured,
-          onUploadInstead: () {
-            setState(() => _mode = _Mode.choose);
-            _upload();
-          },
-          onCancel: () => setState(() => _mode = _Mode.choose),
-        ),
+        key: const ValueKey('camera'),
+        preferFrontCamera: widget.preferFrontCamera,
+        onCaptured: _captured,
+        onUploadInstead: () {
+          setState(() => _mode = _Mode.choose);
+          _upload();
+        },
+        onCancel: () => setState(() => _mode = _Mode.choose),
+      ),
       _Mode.busy => const SizedBox(
-          key: ValueKey('busy'),
-          height: 260,
-          child: AppLoadingIndicator(message: 'Preparing photo…'),
-        ),
-      _Mode.choose => widget.photo == null
-          ? _EmptyPhoto(key: const ValueKey('empty'), enabled: widget.enabled, onCamera: _openCamera, onUpload: _upload)
-          : _PhotoPreview(
-              key: const ValueKey('preview'),
-              photo: widget.photo!,
-              enabled: widget.enabled,
-              onRetake: _openCamera,
-              onReplace: _upload,
-              onRemove: () => widget.onChanged(null),
-            ),
+        key: ValueKey('busy'),
+        height: 260,
+        child: AppLoadingIndicator(message: 'Preparing photo…'),
+      ),
+      _Mode.choose =>
+        widget.photo == null
+            ? _EmptyPhoto(
+                key: const ValueKey('empty'),
+                enabled: widget.enabled,
+                onCamera: _openCamera,
+                onUpload: _upload,
+              )
+            : _PhotoPreview(
+                key: const ValueKey('preview'),
+                photo: widget.photo!,
+                enabled: widget.enabled,
+                onRetake: _openCamera,
+                onReplace: _upload,
+                onRemove: () => widget.onChanged(null),
+              ),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,7 +119,11 @@ class _PhotoPickerPanelState extends State<PhotoPickerPanel> {
         AnimatedSwitcher(duration: context.motion(Motion.fast), child: body),
         if (error != null) ...[
           const SizedBox(height: Space.sm),
-          Text(error, key: const Key('photo-error'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error)),
+          Text(
+            error,
+            key: const Key('photo-error'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
+          ),
         ],
       ],
     );
@@ -206,22 +216,24 @@ class _PhotoPreview extends StatelessWidget {
       padding: const EdgeInsets.all(Space.md),
       child: Column(
         children: [
-          LayoutBuilder(builder: (context, c) {
-            final w = c.maxWidth.clamp(0.0, 360.0);
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.lg),
-              child: Image.memory(
-                photo.bytes,
-                key: const Key('photo-preview'),
-                width: w,
-                height: w * 1.15,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                // Decode at preview size, not the full upload resolution.
-                cacheWidth: (w * dpr).round(),
-              ),
-            );
-          }),
+          LayoutBuilder(
+            builder: (context, c) {
+              final w = c.maxWidth.clamp(0.0, 360.0);
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.lg),
+                child: Image.memory(
+                  photo.bytes,
+                  key: const Key('photo-preview'),
+                  width: w,
+                  height: w * 1.15,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  // Decode at preview size, not the full upload resolution.
+                  cacheWidth: (w * dpr).round(),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: Space.sm),
           Text(
             '${photo.origin == PhotoOrigin.camera ? 'Captured' : 'Uploaded'} · '

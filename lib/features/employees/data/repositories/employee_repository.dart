@@ -18,8 +18,8 @@ class EmployeeRepository {
     required EmployeeApiService api,
     this.cacheTtl = const Duration(seconds: 30),
     DateTime Function()? clock,
-  })  : _api = api,
-        _clock = clock ?? DateTime.now;
+  }) : _api = api,
+       _clock = clock ?? DateTime.now;
 
   final EmployeeApiService _api;
   final Duration cacheTtl;

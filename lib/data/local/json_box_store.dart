@@ -7,12 +7,7 @@ import 'package:hive_ce/hive.dart';
 /// Reads are synchronous (Hive keeps opened boxes in memory); writes are
 /// asynchronous and persisted to disk / IndexedDB.
 class JsonBoxStore<T> {
-  JsonBoxStore({
-    required this.box,
-    required this.fromJson,
-    required this.toJson,
-    required this.keyOf,
-  });
+  JsonBoxStore({required this.box, required this.fromJson, required this.toJson, required this.keyOf});
 
   final Box<dynamic> box;
   final T Function(Map<String, dynamic>) fromJson;
@@ -39,9 +34,7 @@ class JsonBoxStore<T> {
 
   Future<void> put(T item) => box.put(keyOf(item), jsonEncode(toJson(item)));
 
-  Future<void> putAll(Iterable<T> items) => box.putAll({
-        for (final i in items) keyOf(i): jsonEncode(toJson(i)),
-      });
+  Future<void> putAll(Iterable<T> items) => box.putAll({for (final i in items) keyOf(i): jsonEncode(toJson(i))});
 
   Future<void> delete(String key) => box.delete(key);
 

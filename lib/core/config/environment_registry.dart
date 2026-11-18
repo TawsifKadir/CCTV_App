@@ -66,12 +66,7 @@ class EnvironmentRegistry {
 
   static const definitions = <EnvironmentDefinition>[
     // Spring Boot backend running on the developer's machine.
-    EnvironmentDefinition(
-      id: 'local',
-      name: 'Local',
-      localPort: 8080,
-      allowDebugFeatures: true,
-    ),
+    EnvironmentDefinition(id: 'local', name: 'Local', localPort: 8080, allowDebugFeatures: true),
     // Live development server. Plain HTTP: traffic (including employee
     // photos) is unencrypted — move to HTTPS before real use.
     EnvironmentDefinition(
@@ -81,18 +76,9 @@ class EnvironmentRegistry {
       allowDebugFeatures: true,
     ),
     // UNCONFIGURED — set baseUrl when the QA server URL is known.
-    EnvironmentDefinition(
-      id: 'qa',
-      name: 'QA',
-      baseUrl: null,
-    ),
+    EnvironmentDefinition(id: 'qa', name: 'QA', baseUrl: null),
     // UNCONFIGURED — set baseUrl (HTTPS only) when the production URL is known.
-    EnvironmentDefinition(
-      id: 'production',
-      name: 'Production',
-      baseUrl: null,
-      isProduction: true,
-    ),
+    EnvironmentDefinition(id: 'production', name: 'Production', baseUrl: null, isProduction: true),
   ];
 
   /// Host used to reach the developer machine from a local build.
@@ -121,11 +107,7 @@ class EnvironmentRegistry {
   }
 
   /// Builds the config for [d] on [platform].
-  static EnvironmentConfig configFor(
-    EnvironmentDefinition d, {
-    PlatformInfo? platform,
-    String localHostOverride = '',
-  }) {
+  static EnvironmentConfig configFor(EnvironmentDefinition d, {PlatformInfo? platform, String localHostOverride = ''}) {
     final pf = platform ?? PlatformInfo.current();
     String? url = d.baseUrl;
     String? notes;
@@ -146,8 +128,8 @@ class EnvironmentRegistry {
 
   /// Every registered environment (configured or not).
   static List<EnvironmentConfig> all({PlatformInfo? platform, String localHostOverride = ''}) => [
-        for (final d in definitions) configFor(d, platform: platform, localHostOverride: localHostOverride),
-      ];
+    for (final d in definitions) configFor(d, platform: platform, localHostOverride: localHostOverride),
+  ];
 
   static EnvironmentDefinition? definitionFor(String id) {
     final key = id.trim().toLowerCase();

@@ -4,11 +4,11 @@ import '../../data/local/json_box_store.dart';
 import '../../data/local/local_database.dart';
 import '../../data/models/activity.dart';
 import '../../data/models/app_settings.dart';
-import '../../data/remote/api_contracts.dart';
-import '../../data/remote/demo_auth_api.dart';
 import '../../data/repositories/activity_repository.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../features/authentication/data/session_store.dart';
+import '../../features/authentication/providers/auth_controller.dart';
 import '../constants/app_constants.dart';
 
 /// App-wide (environment-independent) dependencies.
@@ -48,12 +48,9 @@ final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(Setting
 
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
   final box = ref.watch(localDatabaseProvider).box(BoxNames.activities);
-  return ActivityRepository(JsonBoxStore<Activity>(
-    box: box,
-    fromJson: Activity.fromJson,
-    toJson: (a) => a.toJson(),
-    keyOf: (a) => a.id,
-  ));
+  return ActivityRepository(
+    JsonBoxStore<Activity>(box: box, fromJson: Activity.fromJson, toJson: (a) => a.toJson(), keyOf: (a) => a.id),
+  );
 });
 
 class ActivitiesNotifier extends Notifier<List<Activity>> {
@@ -69,25 +66,25 @@ class ActivitiesNotifier extends Notifier<List<Activity>> {
 final activitiesProvider = NotifierProvider<ActivitiesNotifier, List<Activity>>(ActivitiesNotifier.new);
 
 // ---------------------------------------------------------------------------
-// Operator authentication (demo, on-device — see DemoAuthApi)
+// Operator authentication (POST /api/auth/login — see AuthController)
 // ---------------------------------------------------------------------------
 
-final demoAuthApiProvider = Provider<DemoAuthApi>(
-  (ref) => DemoAuthApi(ref.watch(localDatabaseProvider).box(BoxNames.demoOperators)),
-);
-
-/// Swap for an HTTP implementation when the backend offers authentication.
-final authApiProvider = Provider<AuthApi>((ref) => ref.watch(demoAuthApiProvider));
+/// Secure storage for remembered sessions (overridden in tests).
+final sessionStoreProvider = Provider<SessionStore>((ref) => SecureSessionStore());
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
-    api: ref.watch(authApiProvider),
-    sessionBox: ref.watch(localDatabaseProvider).box(BoxNames.session),
+    store: ref.watch(sessionStoreProvider),
+    prefs: ref.watch(localDatabaseProvider).box(BoxNames.session),
     activity: ref.watch(activityRepositoryProvider),
   );
 });
 
-/// Value for the `Authorization` header of backend requests, or `null`.
-/// The employee endpoints are unauthenticated today; return
-/// `'Bearer <token>'` here once a real auth API issues tokens.
-final authHeaderProvider = Provider<String? Function()>((ref) => () => null);
+/// Authentication headers for every backend request (and photo downloads),
+/// from the current session: `Authorization` when the login returned a
+/// token, `Cookie` when it returned a server session cookie (native only —
+/// browsers attach cookies themselves).
+final authHeaderProvider = Provider<Map<String, String> Function()>(
+  (ref) =>
+      () => ref.read(authControllerProvider)?.requestHeaders ?? const {},
+);

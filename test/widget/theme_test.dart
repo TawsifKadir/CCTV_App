@@ -36,12 +36,14 @@ void main() {
   });
 
   Future<ProviderContainer> pump(WidgetTester tester) async {
-    final container = ProviderContainer(overrides: [
-      localDatabaseProvider.overrideWithValue(db),
-      initialOperatorProvider.overrideWithValue(null),
-      buildEnvironmentProvider.overrideWithValue(testBuildEnvironment()),
-      dioFactoryProvider.overrideWithValue(() => Dio()..httpClientAdapter = FakeBackend()),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        initialSessionProvider.overrideWithValue(null),
+        buildEnvironmentProvider.overrideWithValue(testBuildEnvironment()),
+        dioFactoryProvider.overrideWithValue(() => Dio()..httpClientAdapter = FakeBackend()),
+      ],
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const EnrollyApp()));
     await tester.pumpAndSettle();
@@ -63,8 +65,11 @@ void main() {
   test('System default is the default preference', () {
     expect(const AppSettings().themeMode, ThemeMode.system);
     expect(AppSettings.fromJson(const {}).themeMode, ThemeMode.system);
-    expect(AppSettings.fromJson(const {'themeMode': 'light'}).themeMode, ThemeMode.system,
-        reason: 'the legacy light default is not carried over');
+    expect(
+      AppSettings.fromJson(const {'themeMode': 'light'}).themeMode,
+      ThemeMode.system,
+      reason: 'the legacy light default is not carried over',
+    );
   });
 
   testWidgets('follows a light system appearance', (tester) async {

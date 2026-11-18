@@ -3,7 +3,6 @@ class Routes {
   Routes._();
 
   static const login = '/login';
-  static const register = '/register';
   static const home = '/home';
   static const employees = '/employees';
   static const enroll = '/enroll';
@@ -17,6 +16,5 @@ class Routes {
   static String employee(String key) => '$employees/${Uri.encodeComponent(key)}';
 
   /// Routes that hide the mobile bottom bar (focused flows).
-  static bool hidesBottomNav(String location) =>
-      location.startsWith(enroll) || location.startsWith(enrollSuccess);
+  static bool hidesBottomNav(String location) => location.startsWith(enroll) || location.startsWith(enrollSuccess);
 }

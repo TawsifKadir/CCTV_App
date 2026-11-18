@@ -14,10 +14,12 @@ import '../../environments/presentation/providers/environment_providers.dart';
 import '../data/sync_engine.dart';
 import '../data/sync_history.dart';
 
-final syncHistoryRepositoryProvider = Provider<SyncHistoryRepository>((ref) => SyncHistoryRepository(
-      ref.watch(localDatabaseProvider).box(BoxNames.syncHistory),
-      environmentId: ref.watch(activeEnvironmentProvider).environmentId,
-    ));
+final syncHistoryRepositoryProvider = Provider<SyncHistoryRepository>(
+  (ref) => SyncHistoryRepository(
+    ref.watch(localDatabaseProvider).box(BoxNames.syncHistory),
+    environmentId: ref.watch(dataScopeProvider),
+  ),
+);
 
 /// One engine per environment. Interrupted uploads from a previous session
 /// are recovered (marked for review) when it is created.
@@ -61,7 +63,7 @@ enum SyncStart { started, offline, nothingToSync, alreadyRunning }
 class SyncController extends Notifier<SyncState> {
   @override
   SyncState build() {
-    ref.watch(activeEnvironmentProvider);
+    ref.watch(dataScopeProvider);
     return const SyncState();
   }
 
@@ -90,9 +92,13 @@ class SyncController extends Notifier<SyncState> {
     if (!await _serverReachable()) return (SyncStart.offline, null);
     state = SyncState(running: true, lastRun: state.lastRun, progress: const SyncProgress(done: 0, total: 0));
     try {
-      final run = await _engine.run(selection, trigger: trigger, onProgress: (p) {
-        state = SyncState(running: true, progress: p, lastRun: state.lastRun);
-      });
+      final run = await _engine.run(
+        selection,
+        trigger: trigger,
+        onProgress: (p) {
+          state = SyncState(running: true, progress: p, lastRun: state.lastRun);
+        },
+      );
       state = SyncState(lastRun: run);
       ref.read(employeeRefresherProvider)();
       await _log(run);
@@ -118,7 +124,9 @@ class SyncController extends Notifier<SyncState> {
   Future<void> _log(SyncRun run) async {
     if (run.attempted == 0) return;
     final env = ref.read(activeEnvironmentProvider);
-    await ref.read(activityRepositoryProvider).log(
+    await ref
+        .read(activityRepositoryProvider)
+        .log(
           run.success ? ActivityType.employeeRegistered : ActivityType.registrationFailed,
           'Sync: ${run.uploaded} uploaded, ${run.failed + run.uncertain} failed',
           subtitle: '${run.trigger.label} · ${env.environmentName}',
@@ -132,12 +140,16 @@ class SyncController extends Notifier<SyncState> {
     final failed = run.failed + run.uncertain;
     if (failed == 0 && !run.aborted) {
       n.show(
-        run.uploaded + run.alreadySynced == 1 ? 'The pending employee has been synchronized.' : 'All pending employees have been synchronized.',
+        run.uploaded + run.alreadySynced == 1
+            ? 'The pending employee has been synchronized.'
+            : 'All pending employees have been synchronized.',
         type: SnackType.success,
       );
     } else if (run.aborted) {
-      n.show('Synchronization paused: the server became unreachable. Your records are safe on this device.',
-          type: SnackType.warning);
+      n.show(
+        'Synchronization paused: the server became unreachable. Your records are safe on this device.',
+        type: SnackType.warning,
+      );
     } else {
       n.show(
         'Synchronization completed with $failed failed record${failed == 1 ? '' : 's'}. You can retry them.',
@@ -183,7 +195,8 @@ final syncCoordinatorProvider = Provider<void>((ref) {
     final now = next.status;
     final notifier = ref.read(appNotifierProvider);
     if (before != now) {
-      if (now == NetworkStatus.online && (before == NetworkStatus.offline || before == NetworkStatus.serverUnavailable)) {
+      if (now == NetworkStatus.online &&
+          (before == NetworkStatus.offline || before == NetworkStatus.serverUnavailable)) {
         maybeAutoSync(announce: true);
         return;
       }

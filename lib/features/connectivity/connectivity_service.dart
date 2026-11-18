@@ -152,17 +152,16 @@ class ConnectionStatus {
     DateTime? lastCheckedAt,
     String? Function()? message,
     int? failures,
-  }) =>
-      ConnectionStatus(
-        environmentId: environmentId,
-        device: device ?? this.device,
-        backendReachable: backendReachable == null ? this.backendReachable : backendReachable(),
-        checking: checking ?? this.checking,
-        lastSuccessAt: lastSuccessAt ?? this.lastSuccessAt,
-        lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
-        message: message == null ? this.message : message(),
-        failures: failures ?? this.failures,
-      );
+  }) => ConnectionStatus(
+    environmentId: environmentId,
+    device: device ?? this.device,
+    backendReachable: backendReachable == null ? this.backendReachable : backendReachable(),
+    checking: checking ?? this.checking,
+    lastSuccessAt: lastSuccessAt ?? this.lastSuccessAt,
+    lastCheckedAt: lastCheckedAt ?? this.lastCheckedAt,
+    message: message == null ? this.message : message(),
+    failures: failures ?? this.failures,
+  );
 }
 
 /// Two-level connectivity monitor:
@@ -193,7 +192,11 @@ class ConnectionStatusNotifier extends Notifier<ConnectionStatus> {
     });
     final device = ref.read(deviceNetworkProvider).valueOrNull ?? DeviceNetwork.unknown;
     if (config.monitor) scheduleMicrotask(check);
-    return ConnectionStatus(environmentId: env.environmentId, device: device, lastSuccessAt: _lastSuccess[env.environmentId]);
+    return ConnectionStatus(
+      environmentId: env.environmentId,
+      device: device,
+      lastSuccessAt: _lastSuccess[env.environmentId],
+    );
   }
 
   void _onDevice(DeviceNetwork d) {
@@ -269,8 +272,11 @@ class ConnectionStatusNotifier extends Notifier<ConnectionStatus> {
   }
 }
 
-final connectionStatusProvider =
-    NotifierProvider<ConnectionStatusNotifier, ConnectionStatus>(ConnectionStatusNotifier.new);
+final connectionStatusProvider = NotifierProvider<ConnectionStatusNotifier, ConnectionStatus>(
+  ConnectionStatusNotifier.new,
+);
 
 /// Convenience: just the user-facing status (rebuilds only when it changes).
-final networkStatusProvider = Provider<NetworkStatus>((ref) => ref.watch(connectionStatusProvider.select((s) => s.status)));
+final networkStatusProvider = Provider<NetworkStatus>(
+  (ref) => ref.watch(connectionStatusProvider.select((s) => s.status)),
+);

@@ -21,9 +21,9 @@ class LocalEmployeeRepository {
     required LazyBox<dynamic> photos,
     required this.environmentId,
     DateTime Function()? clock,
-  })  : _records = records,
-        _photos = photos,
-        _clock = clock ?? DateTime.now;
+  }) : _records = records,
+       _photos = photos,
+       _clock = clock ?? DateTime.now;
 
   final Box<dynamic> _records;
   final LazyBox<dynamic> _photos;

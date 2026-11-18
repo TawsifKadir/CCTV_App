@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -22,9 +21,11 @@ import '../../data/services/employee_api_service.dart';
 
 /// Cache writes never block showing fresh server data; a failed write only
 /// means the offline copy is a little older.
-void _cacheInBackground(Future<void> write) => unawaited(write.catchError((Object e) {
-      debugPrint('Employee cache write failed: $e');
-    }));
+void _cacheInBackground(Future<void> write) => unawaited(
+  write.catchError((Object e) {
+    debugPrint('Employee cache write failed: $e');
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Data sources (one instance per environment)
@@ -45,15 +46,17 @@ final localEmployeeRepositoryProvider = Provider<LocalEmployeeRepository>((ref) 
   return LocalEmployeeRepository(
     records: db.box(BoxNames.localEmployees),
     photos: db.lazyBox(BoxNames.localEmployeePhotos),
-    environmentId: ref.watch(activeEnvironmentProvider).environmentId,
+    environmentId: ref.watch(dataScopeProvider),
   );
 });
 
 /// Server records seen on this device, for offline browsing.
-final serverEmployeeCacheProvider = Provider<ServerEmployeeCache>((ref) => ServerEmployeeCache(
-      ref.watch(localDatabaseProvider).box(BoxNames.serverEmployeeCache),
-      environmentId: ref.watch(activeEnvironmentProvider).environmentId,
-    ));
+final serverEmployeeCacheProvider = Provider<ServerEmployeeCache>(
+  (ref) => ServerEmployeeCache(
+    ref.watch(localDatabaseProvider).box(BoxNames.serverEmployeeCache),
+    environmentId: ref.watch(dataScopeProvider),
+  ),
+);
 
 /// Live list of local records; updates on every change (registration, sync
 /// state transitions).
@@ -67,7 +70,9 @@ class LocalEmployeesNotifier extends Notifier<List<LocalEmployee>> {
   }
 }
 
-final localEmployeesProvider = NotifierProvider<LocalEmployeesNotifier, List<LocalEmployee>>(LocalEmployeesNotifier.new);
+final localEmployeesProvider = NotifierProvider<LocalEmployeesNotifier, List<LocalEmployee>>(
+  LocalEmployeesNotifier.new,
+);
 
 /// Photo of a locally registered employee (loaded on demand).
 final localPhotoProvider = FutureProvider.autoDispose.family<Uint8List?, String>(
@@ -114,7 +119,15 @@ class LocalCounts {
           s++;
       }
     }
-    return LocalCounts(total: items.length, localOnly: lo, pending: p, syncing: sy, failed: f, synced: s, needsReview: r);
+    return LocalCounts(
+      total: items.length,
+      localOnly: lo,
+      pending: p,
+      syncing: sy,
+      failed: f,
+      synced: s,
+      needsReview: r,
+    );
   }
 }
 
@@ -128,7 +141,7 @@ final localCountsProvider = Provider<LocalCounts>((ref) => LocalCounts.of(ref.wa
 class EmployeeQueryNotifier extends Notifier<EmployeeQuery> {
   @override
   EmployeeQuery build() {
-    ref.watch(activeEnvironmentProvider);
+    ref.watch(dataScopeProvider);
     return const EmployeeQuery();
   }
 
@@ -155,7 +168,7 @@ final employeeQueryProvider = NotifierProvider<EmployeeQueryNotifier, EmployeeQu
 class RecordFilterNotifier extends Notifier<RecordFilter> {
   @override
   RecordFilter build() {
-    ref.watch(activeEnvironmentProvider);
+    ref.watch(dataScopeProvider);
     return RecordFilter.all;
   }
 
@@ -221,9 +234,9 @@ class EmployeeListing {
   final RecordFilter filter;
 
   List<EmployeeRecord> serverRecords(Map<int, LocalEmployee> linked) => [
-        for (final e in server.valueOrNull?.page.content ?? const <Employee>[])
-          EmployeeRecord(server: e, local: e.id == null ? null : linked[e.id]),
-      ];
+    for (final e in server.valueOrNull?.page.content ?? const <Employee>[])
+      EmployeeRecord(server: e, local: e.id == null ? null : linked[e.id]),
+  ];
 }
 
 final employeeListingProvider = Provider<EmployeeListing>((ref) {
@@ -250,10 +263,12 @@ final employeeListingProvider = Provider<EmployeeListing>((ref) {
 });
 
 /// Server id → local record, for records this device registered.
-final linkedLocalByServerIdProvider = Provider<Map<int, LocalEmployee>>((ref) => {
-      for (final e in ref.watch(localEmployeesProvider))
-        if (e.serverId != null) e.serverId!: e,
-    });
+final linkedLocalByServerIdProvider = Provider<Map<int, LocalEmployee>>(
+  (ref) => {
+    for (final e in ref.watch(localEmployeesProvider))
+      if (e.serverId != null) e.serverId!: e,
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Dashboard
@@ -261,7 +276,13 @@ final linkedLocalByServerIdProvider = Provider<Map<int, LocalEmployee>>((ref) =>
 
 @immutable
 class ServerOverview {
-  const ServerOverview({required this.total, required this.latest, required this.fromCache, this.lastRefresh, this.error});
+  const ServerOverview({
+    required this.total,
+    required this.latest,
+    required this.fromCache,
+    this.lastRefresh,
+    this.error,
+  });
 
   /// Employees on the server (`null` = unknown).
   final int? total;
@@ -276,18 +297,23 @@ final serverOverviewProvider = FutureProvider<ServerOverview>((ref) async {
   final cache = ref.watch(serverEmployeeCacheProvider);
   final tryServer = ref.watch(connectionStatusProvider.select((s) => s.shouldAttemptServer));
   ServerOverview cached([Object? error]) => ServerOverview(
-        total: cache.lastKnownTotal,
-        latest: cache.all().take(6).toList(),
-        fromCache: true,
-        lastRefresh: cache.lastRefresh,
-        error: error,
-      );
+    total: cache.lastKnownTotal,
+    latest: cache.all().take(6).toList(),
+    fromCache: true,
+    lastRefresh: cache.lastRefresh,
+    error: error,
+  );
   if (!tryServer) return cached();
   try {
     const q = EmployeeQuery(page: 0, size: 6);
     final page = await repo.getEmployees(q);
     _cacheInBackground(cache.upsertPage(page, q));
-    return ServerOverview(total: page.totalElements, latest: page.content, fromCache: false, lastRefresh: DateTime.now());
+    return ServerOverview(
+      total: page.totalElements,
+      latest: page.content,
+      fromCache: false,
+      lastRefresh: DateTime.now(),
+    );
   } on ApiException catch (e) {
     return cached(e);
   }
@@ -321,7 +347,9 @@ final employeeRecordProvider = Provider.family<EmployeeRecord?, String>((ref, ke
       if (e.localId == id) {
         // Once synced, show it as a server record with its local data.
         final server = e.serverId == null ? null : ref.watch(serverEmployeeCacheProvider).byId(e.serverId!);
-        return server == null && e.isUnsynced ? EmployeeRecord(local: e) : EmployeeRecord(server: server ?? e.toEmployee(), local: e);
+        return server == null && e.isUnsynced
+            ? EmployeeRecord(local: e)
+            : EmployeeRecord(server: server ?? e.toEmployee(), local: e);
       }
     }
     return null;

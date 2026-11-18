@@ -24,16 +24,16 @@ enum ApiErrorKind {
   unknown;
 
   static ApiErrorKind fromStatus(int status) => switch (status) {
-        400 => badRequest,
-        401 => unauthorized,
-        403 => forbidden,
-        404 => notFound,
-        409 => conflict,
-        413 => payloadTooLarge,
-        422 => validation,
-        >= 500 && < 600 => server,
-        _ => httpError,
-      };
+    400 => badRequest,
+    401 => unauthorized,
+    403 => forbidden,
+    404 => notFound,
+    409 => conflict,
+    413 => payloadTooLarge,
+    422 => validation,
+    >= 500 && < 600 => server,
+    _ => httpError,
+  };
 
   /// The request never got an HTTP response.
   bool get isConnectivity =>
@@ -45,13 +45,23 @@ enum ApiErrorKind {
 /// [message] is always safe to show to end users: it never contains stack
 /// traces or raw exception text.
 class ApiException implements Exception {
-  const ApiException(this.statusCode, this.message, {ApiErrorKind? kind, this.mayHaveReachedServer = false})
-      : _kind = kind;
+  const ApiException(
+    this.statusCode,
+    this.message, {
+    ApiErrorKind? kind,
+    this.mayHaveReachedServer = false,
+    this.serverMessage,
+  }) : _kind = kind;
 
   /// A failure without an HTTP status (network, parsing, client validation).
   const ApiException.local(this.message, {required ApiErrorKind kind, this.mayHaveReachedServer = false})
-      : statusCode = 0,
-        _kind = kind;
+    : statusCode = 0,
+      serverMessage = null,
+      _kind = kind;
+
+  /// The message the server itself sent, if any (already included in
+  /// [message] when present).
+  final String? serverMessage;
 
   /// `true` when the server may have received and processed the request
   /// even though the app saw a failure (e.g. a timeout while waiting for the
@@ -77,7 +87,7 @@ class ApiException implements Exception {
   /// Handles the backend's `{"error": "..."}` shape and Spring Boot's default
   /// error document (`{"timestamp", "status", "error": "Bad Request",
   /// "message": "..."}`), where `error` is only the reason phrase.
-  static String? serverMessage(Object? body) {
+  static String? messageFromBody(Object? body) {
     Object? data = body;
     if (data is String) {
       final s = data.trim();
@@ -138,37 +148,59 @@ class ApiException implements Exception {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.transformTimeout:
-        return ApiException.local(defaultMessage(ApiErrorKind.timeout, server: server),
-            kind: ApiErrorKind.timeout, mayHaveReachedServer: true);
+        return ApiException.local(
+          defaultMessage(ApiErrorKind.timeout, server: server),
+          kind: ApiErrorKind.timeout,
+          mayHaveReachedServer: true,
+        );
       case DioExceptionType.badCertificate:
-        return ApiException.local(defaultMessage(ApiErrorKind.insecureConnection, server: server),
-            kind: ApiErrorKind.insecureConnection);
+        return ApiException.local(
+          defaultMessage(ApiErrorKind.insecureConnection, server: server),
+          kind: ApiErrorKind.insecureConnection,
+        );
       case DioExceptionType.cancel:
-        return ApiException.local(defaultMessage(ApiErrorKind.cancelled),
-            kind: ApiErrorKind.cancelled, mayHaveReachedServer: true);
+        return ApiException.local(
+          defaultMessage(ApiErrorKind.cancelled),
+          kind: ApiErrorKind.cancelled,
+          mayHaveReachedServer: true,
+        );
       case DioExceptionType.badResponse:
         final status = e.response?.statusCode ?? 0;
         final kind = ApiErrorKind.fromStatus(status);
-        final fromServer = serverMessage(e.response?.data);
+        final fromServer = messageFromBody(e.response?.data);
         // A 5xx may come after the server already saved the record.
-        return ApiException(status, fromServer ?? defaultMessage(kind, server: server),
-            kind: kind, mayHaveReachedServer: status >= 500);
+        return ApiException(
+          status,
+          fromServer ?? defaultMessage(kind, server: server),
+          kind: kind,
+          mayHaveReachedServer: status >= 500,
+          serverMessage: fromServer,
+        );
       case DioExceptionType.connectionError:
         final kind = _classifyConnectionError(e.error);
-        return ApiException.local(defaultMessage(kind, server: server),
-            kind: kind, mayHaveReachedServer: _mayHaveReached(kind, e.error));
+        return ApiException.local(
+          defaultMessage(kind, server: server),
+          kind: kind,
+          mayHaveReachedServer: _mayHaveReached(kind, e.error),
+        );
       case DioExceptionType.unknown:
         if (e.error is FormatException) {
-          return const ApiException.local('The server sent a response the app could not read.',
-              kind: ApiErrorKind.invalidResponse, mayHaveReachedServer: true);
+          return const ApiException.local(
+            'The server sent a response the app could not read.',
+            kind: ApiErrorKind.invalidResponse,
+            mayHaveReachedServer: true,
+          );
         }
         if (e.error == null) {
           return ApiException.local(defaultMessage(ApiErrorKind.unknown), kind: ApiErrorKind.unknown);
         }
         // Dio reports most transport failures (e.g. on the web) as unknown.
         final kind = _classifyConnectionError(e.error);
-        return ApiException.local(defaultMessage(kind, server: server),
-            kind: kind, mayHaveReachedServer: _mayHaveReached(kind, e.error));
+        return ApiException.local(
+          defaultMessage(kind, server: server),
+          kind: kind,
+          mayHaveReachedServer: _mayHaveReached(kind, e.error),
+        );
     }
   }
 
@@ -205,7 +237,9 @@ class ApiException implements Exception {
     if (s.contains('connection refused') || s.contains('errno = 61') || s.contains('errno = 111')) {
       return ApiErrorKind.connectionRefused;
     }
-    if (s.contains('failed host lookup') || s.contains('nodename nor servname') || s.contains('no address associated')) {
+    if (s.contains('failed host lookup') ||
+        s.contains('nodename nor servname') ||
+        s.contains('no address associated')) {
       return ApiErrorKind.dns;
     }
     if (s.contains('timed out')) return ApiErrorKind.timeout;

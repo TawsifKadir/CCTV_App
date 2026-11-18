@@ -10,8 +10,7 @@ class Fmt {
   static final _weekday = DateFormat('EEE');
 
   static String date(DateTime? d) => d == null ? '—' : _date.format(d.toLocal());
-  static String dateTime(DateTime? d) =>
-      d == null ? '—' : _dateTime.format(d.toLocal());
+  static String dateTime(DateTime? d) => d == null ? '—' : _dateTime.format(d.toLocal());
   static String time(DateTime d) => _time.format(d.toLocal());
   static String weekday(DateTime d) => _weekday.format(d.toLocal());
 

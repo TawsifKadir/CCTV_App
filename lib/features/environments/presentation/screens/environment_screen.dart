@@ -26,7 +26,8 @@ class EnvironmentScreen extends ConsumerWidget {
       final ok = await showAppConfirmDialog(
         context,
         title: 'Switch to Production?',
-        message: 'Registrations will be saved to the live production backend (${env.baseUrl}). '
+        message:
+            'Registrations will be saved to the live production backend (${env.baseUrl}). '
             'Only continue if you intend to work with real employee records.',
         confirmLabel: 'Use Production',
         destructive: true,
@@ -64,8 +65,11 @@ class EnvironmentScreen extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Active backend',
-                    style: t.titleMedium?.copyWith(color: Colors.white70), overflow: TextOverflow.ellipsis),
+                child: Text(
+                  'Active backend',
+                  style: t.titleMedium?.copyWith(color: Colors.white70),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(width: Space.xs),
               const EnvironmentBadge(onDark: true),
@@ -91,7 +95,9 @@ class EnvironmentScreen extends ConsumerWidget {
             children: [
               const ConnectionIndicator(onDark: true),
               Text(
-                status.lastSuccessAt == null ? 'No successful connection yet' : 'Last successful call: ${Fmt.dateTime(status.lastSuccessAt)}',
+                status.lastSuccessAt == null
+                    ? 'No successful connection yet'
+                    : 'Last successful call: ${Fmt.dateTime(status.lastSuccessAt)}',
                 style: t.bodySmall?.copyWith(color: Colors.white60),
               ),
             ],
@@ -192,7 +198,15 @@ class EnvironmentScreen extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: Column(children: [current, const SizedBox(height: Space.lg), buildInfo])),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        current,
+                        const SizedBox(height: Space.lg),
+                        buildInfo,
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: Space.lg),
                   Expanded(child: selector),
                 ],
@@ -260,7 +274,11 @@ class _EnvOption extends StatelessWidget {
                 ],
               ),
             ),
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
           ],
         ),
       ),

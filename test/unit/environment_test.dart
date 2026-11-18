@@ -16,15 +16,21 @@ const _web = PlatformInfo(isWeb: true, platform: TargetPlatform.android);
 const _android = PlatformInfo(isWeb: false, platform: TargetPlatform.android);
 const _ios = PlatformInfo(isWeb: false, platform: TargetPlatform.iOS);
 
-BuildEnvironment _resolve({String appEnv = '', String flavor = '', String url = '', String host = '', PlatformInfo platform = _web, bool switching = true}) =>
-    resolveBuildEnvironment(
-      appEnv: appEnv,
-      flavor: flavor,
-      apiBaseUrlOverride: url,
-      localHostOverride: host,
-      allowSwitching: switching,
-      platform: platform,
-    );
+BuildEnvironment _resolve({
+  String appEnv = '',
+  String flavor = '',
+  String url = '',
+  String host = '',
+  PlatformInfo platform = _web,
+  bool switching = true,
+}) => resolveBuildEnvironment(
+  appEnv: appEnv,
+  flavor: flavor,
+  apiBaseUrlOverride: url,
+  localHostOverride: host,
+  allowSwitching: switching,
+  platform: platform,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +50,10 @@ void main() {
     });
 
     test('LOCAL_API_HOST points physical devices at the developer machine', () {
-      expect(_resolve(appEnv: 'local', platform: _android, host: '192.168.1.20').config.baseUrl, 'http://192.168.1.20:8080');
+      expect(
+        _resolve(appEnv: 'local', platform: _android, host: '192.168.1.20').config.baseUrl,
+        'http://192.168.1.20:8080',
+      );
     });
   });
 
@@ -72,9 +81,11 @@ void main() {
       for (final id in ['qa', 'production']) {
         expect(
           () => _resolve(appEnv: id),
-          throwsA(isA<EnvironmentConfigurationException>()
-              .having((e) => e.environmentId, 'id', id)
-              .having((e) => e.message, 'message', contains('No backend URL is configured'))),
+          throwsA(
+            isA<EnvironmentConfigurationException>()
+                .having((e) => e.environmentId, 'id', id)
+                .having((e) => e.message, 'message', contains('No backend URL is configured')),
+          ),
         );
       }
     });
@@ -82,7 +93,9 @@ void main() {
     test('unknown environment names are rejected', () {
       expect(
         () => _resolve(appEnv: 'staging'),
-        throwsA(isA<EnvironmentConfigurationException>().having((e) => e.message, 'm', contains('Unknown environment'))),
+        throwsA(
+          isA<EnvironmentConfigurationException>().having((e) => e.message, 'm', contains('Unknown environment')),
+        ),
       );
     });
 
@@ -99,8 +112,10 @@ void main() {
     });
 
     test('production requires HTTPS and is locked to itself', () {
-      expect(() => _resolve(appEnv: 'production', url: 'http://prod.example.com'),
-          throwsA(isA<EnvironmentConfigurationException>().having((e) => e.message, 'm', contains('HTTPS'))));
+      expect(
+        () => _resolve(appEnv: 'production', url: 'http://prod.example.com'),
+        throwsA(isA<EnvironmentConfigurationException>().having((e) => e.message, 'm', contains('HTTPS'))),
+      );
       final prod = _resolve(appEnv: 'production', url: 'https://api.example.com', switching: true);
       expect(prod.config.isProduction, isTrue);
       expect(prod.runtimeSwitchingAllowed, isFalse);
@@ -110,7 +125,10 @@ void main() {
     test('non-production builds can switch only between configured environments', () {
       final b = _resolve(appEnv: 'local');
       expect(b.runtimeSwitchingAllowed, isTrue);
-      expect(b.available.map((e) => e.environmentId), ['local', 'development'], reason: 'QA/production have no URL yet');
+      expect(b.available.map((e) => e.environmentId), [
+        'local',
+        'development',
+      ], reason: 'QA/production have no URL yet');
       expect(b.unconfigured(platform: _web).map((e) => e.environmentId), ['qa', 'production']);
       expect(_resolve(appEnv: 'local', switching: false).available, hasLength(1));
     });
@@ -147,8 +165,10 @@ void main() {
       expect(env.read(employeeQueryProvider).page, 0, reason: 'pagination reset');
       expect(env.read(employeeQueryProvider).source, isNull);
       expect(identical(env.read(employeeRepositoryProvider), qaRepo), isFalse, reason: 'fresh cache per environment');
-      expect(env.read(employeeRepositoryProvider).resolvePhotoUrl('/api/employee/1/photo'),
-          'http://localhost:8080/api/employee/1/photo');
+      expect(
+        env.read(employeeRepositoryProvider).resolvePhotoUrl('/api/employee/1/photo'),
+        'http://localhost:8080/api/employee/1/photo',
+      );
 
       await env.read(serverPageProvider.future);
       expect(env.backend.last.uri.host, 'localhost');

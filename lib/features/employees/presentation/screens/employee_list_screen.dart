@@ -171,18 +171,30 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       },
     );
     final controls = context.isMobile
-        ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            searchBar,
-            const SizedBox(height: Space.sm),
-            statusChips,
-            const SizedBox(height: Space.xs),
-            sourceChips,
-          ])
-        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Row(children: [Expanded(flex: 5, child: searchBar), const SizedBox(width: Space.md), Flexible(flex: 4, child: sourceChips)]),
-            const SizedBox(height: Space.sm),
-            statusChips,
-          ]);
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              searchBar,
+              const SizedBox(height: Space.sm),
+              statusChips,
+              const SizedBox(height: Space.xs),
+              sourceChips,
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(flex: 5, child: searchBar),
+                  const SizedBox(width: Space.md),
+                  Flexible(flex: 4, child: sourceChips),
+                ],
+              ),
+              const SizedBox(height: Space.sm),
+              statusChips,
+            ],
+          );
 
     final local = listing.localRecords;
     final serverRecords = listing.serverRecords(linked);
@@ -195,7 +207,9 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
         child: SizedBox(
           height: Space.lg,
           child: Center(
-            child: loading && serverData != null ? const LinearProgressIndicator(key: Key('list-reloading'), minHeight: 2) : null,
+            child: loading && serverData != null
+                ? const LinearProgressIndicator(key: Key('list-reloading'), minHeight: 2)
+                : null,
           ),
         ),
       ),
@@ -222,10 +236,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
         ),
       if (local.isNotEmpty) ...[
         SliverToBoxAdapter(
-          child: AppSectionHeader(
-            title: 'On this device',
-            subtitle: '${local.length} not yet on the server',
-          ),
+          child: AppSectionHeader(title: 'On this device', subtitle: '${local.length} not yet on the server'),
         ),
         ..._records(context, local, mode, keyPrefix: 'local'),
         const SliverToBoxAdapter(child: SizedBox(height: Space.lg)),
@@ -233,10 +244,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       if (!listing.filter.isLocal) ...[
         if (local.isNotEmpty && serverRecords.isNotEmpty)
           SliverToBoxAdapter(
-            child: AppSectionHeader(
-              title: 'On server',
-              subtitle: serverData?.fromCache == true ? 'Saved copy' : null,
-            ),
+            child: AppSectionHeader(title: 'On server', subtitle: serverData?.fromCache == true ? 'Saved copy' : null),
           ),
         ..._serverContent(context, server, serverRecords, local.isEmpty, filtered, mode),
         if (serverData != null && serverData.page.totalPages > 0)
@@ -317,7 +325,10 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       }
       return const [
         SliverToBoxAdapter(
-          child: Padding(padding: EdgeInsets.symmetric(vertical: 80), child: AppLoadingIndicator(message: 'Loading employees…')),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 80),
+            child: AppLoadingIndicator(message: 'Loading employees…'),
+          ),
         ),
       ];
     }
@@ -363,7 +374,11 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
                 const EmployeeTableHeader(),
                 Divider(color: context.palette.border, height: 1),
                 for (var i = 0; i < items.length; i++)
-                  animatedListItem(context, i, EmployeeTableRow(key: ValueKey('$keyPrefix-${items[i].key}'), record: items[i])),
+                  animatedListItem(
+                    context,
+                    i,
+                    EmployeeTableRow(key: ValueKey('$keyPrefix-${items[i].key}'), record: items[i]),
+                  ),
               ],
             ),
           ),
@@ -371,23 +386,28 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
       ];
     }
     return [
-      SliverLayoutBuilder(builder: (context, c) {
-        final w = c.crossAxisExtent;
-        final cols = w >= 1100 ? 3 : (w >= 640 ? 2 : 1);
-        return SliverGrid.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cols,
-            mainAxisSpacing: Space.md,
-            crossAxisSpacing: Space.md,
-            // Room for name, designation and up to two rows of tags
-            // (sync status, source, dates) on narrow cards.
-            mainAxisExtent: 180,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, i) =>
-              animatedListItem(context, i, EmployeeCard(key: ValueKey('$keyPrefix-${items[i].key}'), record: items[i])),
-        );
-      }),
+      SliverLayoutBuilder(
+        builder: (context, c) {
+          final w = c.crossAxisExtent;
+          final cols = w >= 1100 ? 3 : (w >= 640 ? 2 : 1);
+          return SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              mainAxisSpacing: Space.md,
+              crossAxisSpacing: Space.md,
+              // Room for name, designation and up to two rows of tags
+              // (sync status, source, dates) on narrow cards.
+              mainAxisExtent: 180,
+            ),
+            itemCount: items.length,
+            itemBuilder: (context, i) => animatedListItem(
+              context,
+              i,
+              EmployeeCard(key: ValueKey('$keyPrefix-${items[i].key}'), record: items[i]),
+            ),
+          );
+        },
+      ),
     ];
   }
 }

@@ -41,15 +41,15 @@ class EmployeeRegistration {
 
   /// `multipart/form-data` body for `POST /api/employee/add`.
   FormData toFormData() => FormData.fromMap({
-        fieldName: name.trim(),
-        fieldDateOfBirth: isoDate(dateOfBirth),
-        fieldDesignation: designation.trim(),
-        fieldPhoto: MultipartFile.fromBytes(
-          photo.bytes,
-          filename: photo.filename,
-          contentType: DioMediaType.parse(photo.format.mimeType),
-        ),
-      });
+    fieldName: name.trim(),
+    fieldDateOfBirth: isoDate(dateOfBirth),
+    fieldDesignation: designation.trim(),
+    fieldPhoto: MultipartFile.fromBytes(
+      photo.bytes,
+      filename: photo.filename,
+      contentType: DioMediaType.parse(photo.format.mimeType),
+    ),
+  });
 }
 
 /// Client-side checks for the registration form. The backend remains the

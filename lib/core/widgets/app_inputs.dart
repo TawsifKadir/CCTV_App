@@ -20,10 +20,7 @@ class _FieldLabel extends StatelessWidget {
       child: Row(
         children: [
           Flexible(child: Text(label, style: t.labelMedium)),
-          if (optional) ...[
-            const SizedBox(width: 6),
-            Text('Optional', style: t.labelSmall),
-          ],
+          if (optional) ...[const SizedBox(width: 6), Text('Optional', style: t.labelSmall)],
         ],
       ),
     );
@@ -316,10 +313,7 @@ class AppDateField extends StatelessWidget {
                   prefixIcon: const Icon(Icons.calendar_today_outlined, size: 19),
                   suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
                 ),
-                child: Text(
-                  value == null ? '' : Fmt.date(value),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+                child: Text(value == null ? '' : Fmt.date(value), style: Theme.of(context).textTheme.bodyLarge),
               ),
             ),
           ],
@@ -356,7 +350,8 @@ class AppSearchBar extends StatefulWidget {
 
 class _AppSearchBarState extends State<AppSearchBar> {
   TextEditingController? _own;
-  TextEditingController get _controller => widget.controller ?? (_own ??= TextEditingController(text: widget.initialValue));
+  TextEditingController get _controller =>
+      widget.controller ?? (_own ??= TextEditingController(text: widget.initialValue));
 
   @override
   void dispose() {
@@ -391,8 +386,14 @@ class _AppSearchBarState extends State<AppSearchBar> {
                     widget.onSubmitted?.call('');
                   },
                 ),
-          border: OutlineInputBorder(borderRadius: pill, borderSide: BorderSide(color: p.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: pill, borderSide: BorderSide(color: p.border)),
+          border: OutlineInputBorder(
+            borderRadius: pill,
+            borderSide: BorderSide(color: p.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: pill,
+            borderSide: BorderSide(color: p.border),
+          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: pill,
             borderSide: const BorderSide(color: AppColors.peach, width: 1.6),
@@ -406,13 +407,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
 
 /// Rounded checkbox row with tappable label.
 class AppCheckboxTile extends StatelessWidget {
-  const AppCheckboxTile({
-    super.key,
-    required this.value,
-    required this.onChanged,
-    required this.child,
-    this.errorText,
-  });
+  const AppCheckboxTile({super.key, required this.value, required this.onChanged, required this.child, this.errorText});
 
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -444,7 +439,9 @@ class AppCheckboxTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Space.xs),
-                Expanded(child: Padding(padding: const EdgeInsets.only(top: 2), child: child)),
+                Expanded(
+                  child: Padding(padding: const EdgeInsets.only(top: 2), child: child),
+                ),
               ],
             ),
           ),
@@ -452,10 +449,7 @@ class AppCheckboxTile extends StatelessWidget {
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(left: 36, top: 2),
-            child: Text(
-              errorText!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
+            child: Text(errorText!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error)),
           ),
       ],
     );

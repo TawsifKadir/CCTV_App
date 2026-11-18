@@ -58,12 +58,9 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
       return;
     }
     FocusScope.of(context).unfocus();
-    final outcome = await controller.submit(EmployeeRegistration(
-      name: _name.text,
-      dateOfBirth: _dob!,
-      designation: _designation.text,
-      photo: _photo!,
-    ));
+    final outcome = await controller.submit(
+      EmployeeRegistration(name: _name.text, dateOfBirth: _dob!, designation: _designation.text, photo: _photo!),
+    );
     if (!mounted || outcome == null) return;
     context.go(Routes.enrollSuccess, extra: outcome);
   }
@@ -252,7 +249,13 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
                         flex: 6,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [fields, const SizedBox(height: Space.lg), submit, const SizedBox(height: Space.md), const _PrivacyNote()],
+                          children: [
+                            fields,
+                            const SizedBox(height: Space.lg),
+                            submit,
+                            const SizedBox(height: Space.md),
+                            const _PrivacyNote(),
+                          ],
                         ),
                       ),
                     ],

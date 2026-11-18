@@ -81,17 +81,22 @@ class NetworkRecorderInterceptor extends Interceptor {
         for (final f in data.files) '${f.key}=<file ${f.value.filename}, ${f.value.length} bytes>',
       ].join('\n');
     }
-    var preview = body?.toString();
+    // Never keep credentials or tokens, even in admin diagnostics.
+    final isAuth = o.path.contains('/auth/');
+    if (isAuth) summary = '[credentials redacted]';
+    var preview = isAuth ? (body == null ? null : '[authentication response redacted]') : body?.toString();
     if (preview != null && preview.length > _maxPreview) preview = '${preview.substring(0, _maxPreview)}…';
-    log.add(NetworkLogEntry(
-      method: o.method,
-      url: o.uri.toString(),
-      startedAt: started,
-      status: status,
-      durationMs: DateTime.now().difference(started).inMilliseconds,
-      error: error,
-      requestSummary: summary,
-      responsePreview: preview,
-    ));
+    log.add(
+      NetworkLogEntry(
+        method: o.method,
+        url: o.uri.toString(),
+        startedAt: started,
+        status: status,
+        durationMs: DateTime.now().difference(started).inMilliseconds,
+        error: error,
+        requestSummary: summary,
+        responsePreview: preview,
+      ),
+    );
   }
 }

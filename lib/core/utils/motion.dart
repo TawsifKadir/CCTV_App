@@ -23,13 +23,7 @@ extension EntranceAnimation on Widget {
   /// * One controller drives both effects, and the widget subtree is built
   ///   once — the animation only changes the opacity/transform layers.
   /// * No-op with reduced motion.
-  Widget entrance(
-    BuildContext context, {
-    int index = 0,
-    double dy = 0.04,
-    Duration? delay,
-    int maxAnimated = 8,
-  }) {
+  Widget entrance(BuildContext context, {int index = 0, double dy = 0.04, Duration? delay, int maxAnimated = 8}) {
     if (context.reduceMotion || index >= maxAnimated) return this;
     final stagger = Duration(milliseconds: 40 * index);
     return _Entrance(delay: (delay ?? Duration.zero) + stagger, dy: dy, child: this);

@@ -26,20 +26,17 @@ Future<void> main() async {
   // log (app-private files on mobile, IndexedDB on the web).
   final db = await LocalDatabase.open();
 
+  // Restore a remembered session (validated against the active
+  // environment by AuthController).
   final bootstrap = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
-  try {
-    await bootstrap.read(demoAuthApiProvider).ensureDemoOperator();
-  } catch (e) {
-    debugPrint('Could not create the demo operator: $e');
-  }
-  final operator = await bootstrap.read(authRepositoryProvider).restoreSession();
+  final session = await bootstrap.read(sessionStoreProvider).read();
   bootstrap.dispose();
 
   runApp(
     ProviderScope(
       overrides: [
         localDatabaseProvider.overrideWithValue(db),
-        initialOperatorProvider.overrideWithValue(operator),
+        initialSessionProvider.overrideWithValue(session),
         buildEnvironmentProvider.overrideWithValue(environment),
       ],
       child: const EnrollyApp(),

@@ -40,13 +40,19 @@ class SyncStatusBadge extends StatelessWidget {
 /// Retry connection / Try again / Cancel.
 Future<void> runSyncNow(BuildContext context, WidgetRef ref, {SyncSelection selection = SyncSelection.manual}) async {
   final controller = ref.read(syncControllerProvider.notifier);
-  final (start, _) = selection == SyncSelection.failedOnly ? await controller.retryFailed() : await controller.sync(selection: selection);
+  final (start, _) = selection == SyncSelection.failedOnly
+      ? await controller.retryFailed()
+      : await controller.sync(selection: selection);
   if (!context.mounted) return;
   switch (start) {
     case SyncStart.offline:
       await showOfflineSyncDialog(context, ref, selection: selection);
     case SyncStart.nothingToSync:
-      showAppSnack(context, 'Everything is up to date. No employees are waiting to synchronize.', type: SnackType.success);
+      showAppSnack(
+        context,
+        'Everything is up to date. No employees are waiting to synchronize.',
+        type: SnackType.success,
+      );
     case SyncStart.alreadyRunning:
       showAppSnack(context, 'Synchronization is already in progress.');
     case SyncStart.started:
@@ -54,7 +60,11 @@ Future<void> runSyncNow(BuildContext context, WidgetRef ref, {SyncSelection sele
   }
 }
 
-Future<void> showOfflineSyncDialog(BuildContext context, WidgetRef ref, {SyncSelection selection = SyncSelection.manual}) async {
+Future<void> showOfflineSyncDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  SyncSelection selection = SyncSelection.manual,
+}) async {
   final pending = ref.read(localCountsProvider).awaiting;
   final choice = await showDialog<String>(
     context: context,
@@ -95,21 +105,23 @@ Future<void> showOfflineSyncDialog(BuildContext context, WidgetRef ref, {SyncSel
                   onPressed: () => Navigator.pop(ctx, 'connection'),
                 ),
                 const SizedBox(height: Space.sm),
-                Row(children: [
-                  Expanded(
-                    child: AppSecondaryButton(label: 'Cancel', height: 46, onPressed: () => Navigator.pop(ctx)),
-                  ),
-                  const SizedBox(width: Space.sm),
-                  Expanded(
-                    child: AppSecondaryButton(
-                      label: 'Try again',
-                      icon: Icons.sync_rounded,
-                      height: 46,
-                      variant: AppSecondaryVariant.outline,
-                      onPressed: () => Navigator.pop(ctx, 'sync'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppSecondaryButton(label: 'Cancel', height: 46, onPressed: () => Navigator.pop(ctx)),
                     ),
-                  ),
-                ]),
+                    const SizedBox(width: Space.sm),
+                    Expanded(
+                      child: AppSecondaryButton(
+                        label: 'Try again',
+                        icon: Icons.sync_rounded,
+                        height: 46,
+                        variant: AppSecondaryVariant.outline,
+                        onPressed: () => Navigator.pop(ctx, 'sync'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -183,14 +195,24 @@ class PendingSyncChip extends ConsumerWidget {
             color: color.withValues(alpha: onDark ? 0.24 : 0.14),
             borderRadius: BorderRadius.circular(Radii.pill),
           ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(running ? Icons.sync_rounded : Icons.cloud_upload_outlined, size: 14, color: onDark ? color : context.onTint(color)),
-            const SizedBox(width: 5),
-            Text(
-              running ? 'Syncing' : '${counts.awaiting} pending',
-              style: t.labelSmall?.copyWith(color: onDark ? Colors.white : context.onTint(color), fontWeight: FontWeight.w700),
-            ),
-          ]),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                running ? Icons.sync_rounded : Icons.cloud_upload_outlined,
+                size: 14,
+                color: onDark ? color : context.onTint(color),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                running ? 'Syncing' : '${counts.awaiting} pending',
+                style: t.labelSmall?.copyWith(
+                  color: onDark ? Colors.white : context.onTint(color),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

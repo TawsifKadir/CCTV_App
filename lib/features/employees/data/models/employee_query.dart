@@ -6,12 +6,7 @@ import 'employee.dart';
 /// Parameters for `GET /api/employee/list`.
 @immutable
 class EmployeeQuery {
-  const EmployeeQuery({
-    this.page = 0,
-    this.size = ApiEndpoints.defaultPageSize,
-    this.query = '',
-    this.source,
-  });
+  const EmployeeQuery({this.page = 0, this.size = ApiEndpoints.defaultPageSize, this.query = '', this.source});
 
   final int page;
   final int size;
@@ -42,11 +37,11 @@ class EmployeeQuery {
   }
 
   EmployeeQuery copyWith({int? page, int? size, String? query, EnrollmentSource? Function()? source}) => EmployeeQuery(
-        page: page ?? this.page,
-        size: size ?? this.size,
-        query: query ?? this.query,
-        source: source == null ? this.source : source(),
-      );
+    page: page ?? this.page,
+    size: size ?? this.size,
+    query: query ?? this.query,
+    source: source == null ? this.source : source(),
+  );
 
   @override
   bool operator ==(Object other) => other is EmployeeQuery && other.cacheKey == cacheKey;

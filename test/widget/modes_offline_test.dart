@@ -9,7 +9,6 @@ import 'package:cctv_app/core/services/app_notifier.dart';
 import 'package:cctv_app/core/services/providers.dart';
 import 'package:cctv_app/core/theme/app_theme.dart';
 import 'package:cctv_app/data/local/local_database.dart';
-import 'package:cctv_app/data/remote/demo_auth_api.dart';
 import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
 import 'package:cctv_app/features/connectivity/connectivity_service.dart';
 import 'package:cctv_app/features/employees/data/models/local_employee.dart';
@@ -33,7 +32,6 @@ void main() {
     dir = await Directory.systemTemp.createTemp('enrolly_modes_');
     db = await LocalDatabase.open(path: dir.path);
     final c = ProviderContainer(overrides: [localDatabaseProvider.overrideWithValue(db)]);
-    await c.read(demoAuthApiProvider).ensureDemoOperator();
     // Automatic sync is covered by unit tests; here it would start uploads
     // whose storage writes can't complete inside the fake-async test zone.
     await c.read(settingsProvider.notifier).update((s) => s.copyWith(reduceMotion: true, autoSync: false));
@@ -49,6 +47,7 @@ void main() {
 
   Future<(ProviderContainer, FakeDeviceNetwork)> pump(
     WidgetTester tester, {
+    bool signedIn = true,
     Size size = const Size(1440, 900),
     BuildEnvironment? environment,
     FakeBackend? backend,
@@ -58,16 +57,20 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final network = FakeDeviceNetwork(device);
-    final container = ProviderContainer(overrides: [
-      localDatabaseProvider.overrideWithValue(db),
-      initialOperatorProvider.overrideWithValue(DemoAuthApi.demoOperator),
-      ...testOverrides(
-        backend: backend ?? FakeBackend(),
-        network: network,
-        notifier: AppNotifier(key: GlobalKey<ScaffoldMessengerState>()),
-        environment: environment,
-      ),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        localDatabaseProvider.overrideWithValue(db),
+        initialSessionProvider.overrideWithValue(
+          signedIn ? testSession(environmentId: (environment ?? testBuildEnvironment()).config.environmentId) : null,
+        ),
+        ...testOverrides(
+          backend: backend ?? FakeBackend(),
+          network: network,
+          notifier: AppNotifier(key: GlobalKey<ScaffoldMessengerState>()),
+          environment: environment,
+        ),
+      ],
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const EnrollyApp()));
     await tester.pumpAndSettle();
@@ -83,8 +86,19 @@ void main() {
     testWidgets('navigation has only client destinations', (tester) async {
       await pump(tester, environment: production);
       final sidebar = find.byType(AppSidebar);
-      for (final label in ['Dashboard', 'Employee Management', 'Register Employee', 'Synchronization', 'Settings', 'Logout']) {
-        expect(find.descendant(of: sidebar, matching: find.text(label)), findsOneWidget, reason: label);
+      for (final label in [
+        'Dashboard',
+        'Employee Management',
+        'Register Employee',
+        'Synchronization',
+        'Settings',
+        'Logout',
+      ]) {
+        expect(
+          find.descendant(of: sidebar, matching: find.text(label)),
+          findsOneWidget,
+          reason: label,
+        );
       }
       expect(find.descendant(of: sidebar, matching: find.text('Environment Configuration')), findsNothing);
       expect(find.descendant(of: sidebar, matching: find.text('Diagnostics')), findsNothing);
@@ -142,7 +156,9 @@ void main() {
   group('Offline-first UI', () {
     Future<void> seed(WidgetTester tester, ProviderContainer c, String name, SyncStatus status) async {
       await tester.runAsync(() async {
-        await c.read(localEmployeeRepositoryProvider).create(
+        await c
+            .read(localEmployeeRepositoryProvider)
+            .create(
               EmployeeRegistration(
                 name: name,
                 dateOfBirth: DateTime(1990, 1, 1),
@@ -228,6 +244,64 @@ void main() {
       expect(find.text(id), findsOneWidget, reason: 'local record id shown');
       expect(find.byKey(const Key('sync-one')), findsOneWidget);
       await clearLocal(tester, c);
+    });
+  });
+
+  group('Login', () {
+    testWidgets('development builds offer Continue with Demo Account (no API call, DEMO MODE shown)', (tester) async {
+      final (c, _) = await pump(tester, signedIn: false, size: const Size(390, 844));
+      expect(find.byKey(const Key('demo-login')), findsOneWidget);
+      expect(find.textContaining('Demo@123', findRichText: true), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('demo-login-button')));
+      await tester.tap(find.byKey(const Key('demo-login-button')));
+      await tester.pumpAndSettle();
+      expect(c.read(authControllerProvider)?.isDemo, isTrue);
+      expect(find.byType(AppBottomNavigation), findsOneWidget, reason: 'navigated to the dashboard');
+      expect(find.byKey(const Key('demo-mode-badge')), findsOneWidget);
+    });
+
+    testWidgets('real sign-in reaches the dashboard without DEMO MODE', (tester) async {
+      final (c, _) = await pump(tester, signedIn: false);
+      await tester.enterText(find.byKey(const Key('login-username')), testUsername);
+      await tester.enterText(find.byKey(const Key('login-password')), testPassword);
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('login-submit')));
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pumpAndSettle();
+      expect(c.read(authControllerProvider)?.isDemo, isFalse);
+      expect(find.byKey(const Key('demo-mode-badge')), findsNothing);
+    });
+
+    testWidgets('production builds show no demo credentials or developer tools', (tester) async {
+      await pump(tester, signedIn: false, environment: production);
+      expect(find.byKey(const Key('demo-login')), findsNothing);
+      expect(find.text('Continue with Demo Account'), findsNothing);
+      expect(find.textContaining('Demo@123', findRichText: true), findsNothing);
+      expect(find.byType(EnvironmentBadge), findsNothing);
+      expect(find.byKey(const Key('login-username')), findsOneWidget);
+    });
+
+    testWidgets('wrong credentials show a friendly error', (tester) async {
+      await pump(tester, signedIn: false);
+      await tester.enterText(find.byKey(const Key('login-username')), 'admin');
+      await tester.enterText(find.byKey(const Key('login-password')), 'nope');
+      await tester.tap(find.byKey(const Key('login-submit')));
+      await tester.pumpAndSettle();
+      expect(find.text('Incorrect username or password.'), findsOneWidget);
+    });
+
+    testWidgets('logout returns to login and protected routes redirect there', (tester) async {
+      final (c, _) = await pump(tester);
+      await go(tester, c, Routes.settings);
+      await tester.ensureVisible(find.byKey(const Key('settings-sign-out')));
+      await tester.tap(find.byKey(const Key('settings-sign-out')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign out').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Welcome back'), findsOneWidget);
+      await go(tester, c, Routes.employees);
+      expect(find.text('Welcome back'), findsOneWidget, reason: 'protected route redirects to login');
     });
   });
 }

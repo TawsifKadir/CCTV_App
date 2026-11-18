@@ -63,9 +63,7 @@ class _CameraCaptureFrameState extends State<CameraCaptureFrame> with SingleTick
         fit: StackFit.expand,
         children: [
           if (widget.active) const CustomPaint(painter: _DimPainter()),
-          RepaintBoundary(
-            child: CustomPaint(painter: _OutlinePainter(_t, color)),
-          ),
+          RepaintBoundary(child: CustomPaint(painter: _OutlinePainter(_t, color))),
         ],
       ),
     );

@@ -6,11 +6,7 @@ import '../utils/motion.dart';
 
 /// Shared hover/press scale behaviour for custom buttons.
 class _Pressable extends StatefulWidget {
-  const _Pressable({
-    required this.child,
-    required this.onTap,
-    required this.borderRadius,
-  });
+  const _Pressable({required this.child, required this.onTap, required this.borderRadius});
 
   final Widget child;
   final VoidCallback? onTap;
@@ -42,11 +38,7 @@ class _PressableState extends State<_Pressable> {
           curve: Motion.curve,
           child: Material(
             type: MaterialType.transparency,
-            child: InkWell(
-              onTap: widget.onTap,
-              borderRadius: widget.borderRadius,
-              child: widget.child,
-            ),
+            child: InkWell(onTap: widget.onTap, borderRadius: widget.borderRadius, child: widget.child),
           ),
         ),
       ),
@@ -81,9 +73,7 @@ class AppPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = onPressed == null || loading;
     final radius = BorderRadius.circular(Radii.md + 2);
-    final text = Theme.of(
-      context,
-    ).textTheme.labelLarge?.copyWith(color: foreground);
+    final text = Theme.of(context).textTheme.labelLarge?.copyWith(color: foreground);
     return Semantics(
       button: true,
       enabled: !disabled,
@@ -101,13 +91,7 @@ class AppPrimaryButton extends StatelessWidget {
             borderRadius: radius,
             boxShadow: onPressed == null
                 ? null
-                : [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.32),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                : [BoxShadow(color: color.withValues(alpha: 0.32), blurRadius: 18, offset: const Offset(0, 8))],
           ),
           child: Row(
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -121,10 +105,7 @@ class AppPrimaryButton extends StatelessWidget {
                           key: const ValueKey('l'),
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.4,
-                            color: foreground,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2.4, color: foreground),
                         )
                       : Row(
                           key: const ValueKey('c'),
@@ -135,11 +116,7 @@ class AppPrimaryButton extends StatelessWidget {
                               const SizedBox(width: Space.xs),
                             ],
                             Flexible(
-                              child: Text(
-                                label,
-                                style: text,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: Text(label, style: text, overflow: TextOverflow.ellipsis),
                             ),
                           ],
                         ),
@@ -182,11 +159,7 @@ class AppSecondaryButton extends StatelessWidget {
     final (Color bg, Color fg, Color? border) = switch (variant) {
       AppSecondaryVariant.neutral => (p.backgroundAlt, p.text, null),
       AppSecondaryVariant.outline => (Colors.transparent, p.text, p.border),
-      AppSecondaryVariant.danger => (
-        AppColors.error.withValues(alpha: 0.12),
-        AppColors.error,
-        null,
-      ),
+      AppSecondaryVariant.danger => (AppColors.error.withValues(alpha: 0.12), AppColors.error, null),
       AppSecondaryVariant.dark => (p.nav, AppColors.white, null),
     };
     final radius = BorderRadius.circular(Radii.md + 2);
@@ -207,23 +180,14 @@ class AppSecondaryButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: bg,
               borderRadius: radius,
-              border: border == null
-                  ? null
-                  : Border.all(color: border, width: 1.4),
+              border: border == null ? null : Border.all(color: border, width: 1.4),
             ),
             child: Row(
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (loading)
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      color: fg,
-                    ),
-                  )
+                  SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2, color: fg))
                 else if (icon != null)
                   Icon(icon, size: 19, color: fg),
                 if (loading || icon != null) const SizedBox(width: Space.xs),
@@ -231,9 +195,7 @@ class AppSecondaryButton extends StatelessWidget {
                   child: Text(
                     label,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelLarge?.copyWith(color: fg),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg),
                   ),
                 ),
               ],
@@ -296,10 +258,7 @@ class AppIconButton extends StatelessWidget {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.peach,
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: const BoxDecoration(color: AppColors.peach, shape: BoxShape.circle),
                     ),
                   ),
               ],
@@ -313,12 +272,7 @@ class AppIconButton extends StatelessWidget {
 
 /// Inline text link in the accent colour.
 class AppLinkButton extends StatelessWidget {
-  const AppLinkButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.color,
-  });
+  const AppLinkButton({super.key, required this.label, required this.onPressed, this.color});
 
   final String label;
   final VoidCallback? onPressed;
@@ -333,9 +287,7 @@ class AppLinkButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         minimumSize: const Size(0, 36),
         shape: RoundedRectangleBorder(borderRadius: Radii.smAll),
-        textStyle: Theme.of(
-          context,
-        ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+        textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
       ),
       child: Text(label),
     );

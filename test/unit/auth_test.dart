@@ -1,125 +1,280 @@
-import 'package:cctv_app/core/constants/app_constants.dart';
+import 'dart:io';
+
+import 'package:cctv_app/core/network/api_exceptions.dart';
 import 'package:cctv_app/core/services/providers.dart';
-import 'package:cctv_app/core/utils/password_hasher.dart';
-import 'package:cctv_app/data/remote/demo_auth_api.dart';
-import 'package:cctv_app/data/remote/api_contracts.dart';
+import 'package:cctv_app/features/authentication/data/auth_session.dart';
+import 'package:cctv_app/features/authentication/providers/auth_controller.dart';
+import 'package:cctv_app/features/connectivity/connectivity_service.dart';
+import 'package:cctv_app/features/employees/presentation/providers/employee_providers.dart';
+import 'package:cctv_app/features/environments/presentation/providers/environment_providers.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_env.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late TestEnv env;
 
-  setUp(() async => env = await TestEnv.create());
-  tearDown(() async => env.dispose());
+  setUp(() async {
+    env = await TestEnv.create();
+    env.container.listen(authControllerProvider, (_, _) {});
+  });
+  tearDown(() => env.dispose());
 
-  const request = RegisterRequest(
-    fullName: 'Robin Field',
-    email: 'Robin@Example.com',
-    phone: '+1 555 222 3333',
-    password: 'Secret123',
-    organization: 'North Branch',
-  );
+  AuthController auth() => env.read(authControllerProvider.notifier);
 
-  group('Operator registration', () {
-    test('creates an operator, stores it and starts a session', () async {
-      final repo = env.read(authRepositoryProvider);
-      final op = await repo.register(request);
+  Future<String> loginError(String u, String p) async {
+    try {
+      await auth().login(u, p, remember: true);
+      fail('expected an error');
+    } catch (e) {
+      return friendlyAuthError(e);
+    }
+  }
 
-      expect(op.fullName, 'Robin Field');
-      expect(op.email, 'robin@example.com', reason: 'emails are normalised');
-      expect(op.organization, 'North Branch');
-      expect(env.read(demoAuthApiProvider).hasOperator('robin@example.com'), isTrue);
-      expect((await repo.restoreSession())?.id, op.id);
+  group('POST /api/auth/login', () {
+    test('sends exactly {username, password} as JSON to the active environment', () async {
+      await auth().login(' admin ', testPassword, remember: true);
+      final logins = env.backend.requests.where((r) => r.path.endsWith('/auth/login')).toList();
+      expect(logins, hasLength(2), reason: '403 issues the CSRF token, then one automatic retry');
+      expect(logins.last.headers['X-XSRF-TOKEN'], 'csrf-abc');
+      final req = logins.last;
+      expect(req.uri.toString(), 'http://localhost:8080/api/auth/login');
+      expect(req.method, 'POST');
+      expect(req.contentType, startsWith('application/json'));
+      expect(req.data, {'username': 'admin', 'password': testPassword});
     });
 
-    test('rejects a duplicate email (case-insensitive)', () async {
-      final repo = env.read(authRepositoryProvider);
-      await repo.register(request);
-      await expectLater(
-        repo.register(const RegisterRequest(
-          fullName: 'Other Person',
-          email: 'ROBIN@example.com',
-          phone: '+1 555 222 4444',
-          password: 'Secret123',
-        )),
-        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 409)),
-      );
+    test('successful login sets the session and the operator', () async {
+      await auth().login(testUsername, testPassword, remember: true);
+      final s = env.read(authControllerProvider)!;
+      expect(s.operator.username, 'admin');
+      expect(s.operator.roles, ['admin']);
+      expect(s.expiresAt, isNotNull, reason: 'expiresIn 1800s');
+      expect(s.environmentId, 'local');
+      expect(s.requestHeaders, {'Authorization': 'Bearer tok-123'});
     });
 
-    test('never stores the password in plain text', () async {
-      await env.read(authRepositoryProvider).register(request);
-      final raw = env.db.box(BoxNames.demoOperators).get('robin@example.com') as String;
-      expect(raw.contains('Secret123'), isFalse);
-      expect(raw.contains('pbkdf2'), isTrue);
+    test('authenticated employee requests carry the session credentials', () async {
+      await auth().login(testUsername, testPassword, remember: true);
+      await env.read(serverPageProvider.future);
+      final list = env.backend.requests.lastWhere((r) => r.path.endsWith('/employee/list'));
+      expect(list.headers['Authorization'], 'Bearer tok-123');
     });
 
-    test('supports multiple operators', () async {
-      final repo = env.read(authRepositoryProvider);
-      await repo.register(request);
-      await repo.register(const RegisterRequest(
-        fullName: 'Sam Second',
-        email: 'sam@example.com',
-        phone: '+1 555 222 5555',
-        password: 'Another123',
-      ));
-      expect((await repo.login('robin@example.com', 'Secret123', remember: true)).fullName, 'Robin Field');
-      expect((await repo.login('sam@example.com', 'Another123', remember: true)).fullName, 'Sam Second');
+    test('a session cookie (e.g. JSESSIONID) is kept and sent back when no token is returned', () async {
+      env.backend.handler = (o) => o.path.endsWith('/auth/login')
+          ? ResponseBody.fromString(
+              '',
+              200,
+              headers: {
+                'set-cookie': ['JSESSIONID=abc123; Path=/; HttpOnly', 'theme=dark; Path=/'],
+              },
+            )
+          : FakeBackend.defaultHandler(o);
+      await auth().login(testUsername, testPassword, remember: true);
+      final s = env.read(authControllerProvider)!;
+      expect(s.accessToken, isNull);
+      expect(s.cookies, {'JSESSIONID': 'abc123'}, reason: 'only session cookies, without attributes');
+      expect(s.operator.username, testUsername, reason: 'falls back to the entered username');
+      await env.read(serverPageProvider.future);
+      expect(env.backend.requests.last.headers['Cookie'], 'JSESSIONID=abc123');
     });
   });
 
-  group('Operator login', () {
-    setUp(() async {
-      await env.read(demoAuthApiProvider).ensureDemoOperator();
+  group('Errors', () {
+    test('incorrect credentials', () async {
+      expect(await loginError('admin', 'wrong'), 'Incorrect username or password.');
+      expect(env.read(authControllerProvider), isNull);
     });
 
-    test('accepts the demo credentials', () async {
-      final op = await env.read(authRepositoryProvider)
-          .login(AppConstants.demoEmail, AppConstants.demoPassword, remember: true);
-      expect(op.email, AppConstants.demoEmail);
+    test('HTTP status codes map to friendly messages', () async {
+      for (final (status, body, expected) in [
+        (400, {'error': 'Username must not be blank.'}, 'Username must not be blank.'),
+        (403, <String, dynamic>{}, 'This account is not allowed to sign in.'),
+        (404, {'timestamp': 'x', 'status': 404, 'error': 'Not Found'}, contains('not found on this server')),
+        (500, <String, dynamic>{}, 'The authentication service is currently unavailable. Please try again later.'),
+      ]) {
+        env.backend.handler = (_) => json(status, body);
+        expect(await loginError('admin', 'x'), expected, reason: 'HTTP $status');
+      }
     });
 
-    test('rejects a wrong password with a friendly message', () async {
-      await expectLater(
-        env.read(authRepositoryProvider).login(AppConstants.demoEmail, 'wrong', remember: true),
-        throwsA(isA<ApiException>()
-            .having((e) => e.statusCode, 'status', 401)
-            .having((e) => e.message, 'message', 'Incorrect email or password')),
+    test('connection refused / timeout / invalid response', () async {
+      env.backend.handler = (_) => throw const SocketException('Connection refused');
+      expect(
+        await loginError('admin', 'x'),
+        'Unable to connect to the server. Check your internet connection and try again.',
       );
+      env.backend.handler = (o) => throw DioException(requestOptions: o, type: DioExceptionType.receiveTimeout);
+      expect(await loginError('admin', 'x'), 'The server took too long to respond. Please try again.');
+      env.backend.handler = (_) => text(200, '<html>not json</html>');
+      expect(await loginError('admin', 'x'), 'The server sent an unexpected response. Please try again later.');
     });
 
-    test('rejects an unknown account', () async {
-      await expectLater(
-        env.read(authRepositoryProvider).login('nobody@example.com', 'Admin@123', remember: true),
-        throwsA(isA<ApiException>()),
-      );
+    test('offline login is refused without a request; never a local session', () async {
+      env.network.set(DeviceNetwork.none);
+      await env.settle();
+      expect(await loginError(testUsername, testPassword), startsWith('Unable to connect to the server'));
+      expect(env.backend.requests.where((r) => r.path.endsWith('/auth/login')), isEmpty);
+      expect(env.read(authControllerProvider), isNull);
     });
 
-    test('"remember me" controls whether the session survives a restart', () async {
+    test('a 2xx with an explicit failure flag is a failed login', () async {
+      env.backend.handler = (_) => json(200, {'success': false, 'message': 'Account locked'});
+      expect(await loginError('admin', 'x'), 'Incorrect username or password.');
+    });
+  });
+
+  group('Session', () {
+    test('"remember me" persists the session securely; off keeps it in memory only', () async {
+      await auth().login(testUsername, testPassword, remember: true);
+      expect(env.sessions.value?.accessToken, 'tok-123');
+      expect(env.read(authRepositoryProvider).rememberedUsername, 'admin');
+      await auth().login(testUsername, testPassword, remember: false);
+      expect(env.sessions.value, isNull);
+      expect(env.read(authRepositoryProvider).rememberedUsername, isNull);
+    });
+
+    test('checkAuthenticationStatus restores valid sessions only', () async {
       final repo = env.read(authRepositoryProvider);
-      await repo.login(AppConstants.demoEmail, AppConstants.demoPassword, remember: false);
-      expect(await repo.restoreSession(), isNull);
+      env.sessions.value = testSession();
+      expect((await repo.checkAuthenticationStatus('local'))?.operator.username, 'admin');
+      env.sessions.value = testSession();
+      expect(await repo.checkAuthenticationStatus('development'), isNull, reason: 'other environment');
+      env.sessions.value = AuthSession(
+        operator: testSession().operator,
+        environmentId: 'local',
+        createdAt: DateTime(2020),
+        expiresAt: DateTime(2021),
+      );
+      expect(await repo.checkAuthenticationStatus('local'), isNull, reason: 'expired');
+      expect(env.sessions.value, isNull, reason: 'stale sessions are removed');
+    });
 
-      await repo.login(AppConstants.demoEmail, AppConstants.demoPassword, remember: true);
-      expect(await repo.restoreSession(), isNotNull);
+    test('a restored session survives restart', () async {
+      final restarted = await TestEnv.create(initialSession: testSession());
+      addTearDown(restarted.dispose);
+      expect(restarted.read(authControllerProvider)?.operator.username, 'admin');
+    });
 
-      await repo.logout();
-      expect(await repo.restoreSession(), isNull);
+    test('logout tells the server (POST /api/auth/logout) and clears credentials', () async {
+      await auth().login(testUsername, testPassword, remember: true);
+      await auth().logout();
+      final out = env.backend.requests.lastWhere((r) => r.path.endsWith('/auth/logout'));
+      expect(out.headers['Authorization'], 'Bearer tok-123', reason: 'sent while still authenticated');
+      expect(env.read(authControllerProvider), isNull);
+      expect(env.sessions.value, isNull);
+      await env.read(serverPageProvider.future);
+      expect(env.backend.requests.last.headers.containsKey('Authorization'), isFalse);
+    });
+
+    test('a 401 on an authenticated request expires the session', () async {
+      await auth().login(testUsername, testPassword, remember: true);
+      env.backend.handler = (o) => o.path.endsWith('/employee/list') ? json(401, {}) : FakeBackend.defaultHandler(o);
+      await env.read(connectionStatusProvider.notifier).check();
+      await env.settle();
+      expect(env.read(authControllerProvider), isNull);
+      expect(auth().takeSignOutReason(), 'Your session has expired. Please sign in again.');
+    });
+
+    test('switching environment signs out (sessions belong to one backend)', () async {
+      final e2 = await TestEnv.create(
+        environment: testBuildEnvironment(appEnv: 'qa', apiBaseUrl: 'https://qa.example.com'),
+        initialSession: testSession(environmentId: 'qa'),
+      );
+      addTearDown(e2.dispose);
+      e2.container.listen(authControllerProvider, (_, _) {});
+      expect(e2.read(authControllerProvider), isNotNull);
+      await e2.read(activeEnvironmentProvider.notifier).select('local');
+      await e2.settle();
+      expect(e2.read(authControllerProvider), isNull);
     });
   });
 
-  test('the demo operator is created once and existing accounts survive', () async {
-    final api = env.read(demoAuthApiProvider);
-    await api.ensureDemoOperator();
-    await api.ensureDemoOperator();
-    expect(api.hasOperator(AppConstants.demoEmail), isTrue);
-    expect(DemoAuthApi.demoOperator.email, AppConstants.demoEmail);
+  test('AuthResponseParser reads nested user info and expiry, ignores unknown fields', () {
+    final s = AuthResponseParser.parse(
+      body: {
+        'token': 'abc',
+        'expiresIn': 3600,
+        'user': {
+          'id': 7,
+          'username': 'jdoe',
+          'fullName': 'Jane Doe',
+          'authorities': [
+            {'authority': 'ROLE_OPERATOR'},
+          ],
+        },
+        'somethingElse': true,
+      },
+      headers: const {},
+      enteredUsername: 'ignored',
+      environmentId: 'local',
+      now: DateTime(2026, 1, 1),
+    );
+    expect(s.accessToken, 'abc');
+    expect(s.requestHeaders['Authorization'], 'Bearer abc');
+    expect(s.operator.id, '7');
+    expect(s.operator.fullName, 'Jane Doe');
+    expect(s.operator.roles, ['ROLE_OPERATOR']);
+    expect(s.expiresAt, DateTime(2026, 1, 1, 1));
   });
 
-  test('PasswordHasher verifies only the original password', () {
-    final h = PasswordHasher.hash('Admin@123');
-    expect(PasswordHasher.verify('Admin@123', h), isTrue);
-    expect(PasswordHasher.verify('admin@123', h), isFalse);
-    expect(PasswordHasher.hash('Admin@123'), isNot(h), reason: 'random salt per hash');
+  group('Demo login (development builds)', () {
+    test('validates locally, makes no HTTP request, works offline', () async {
+      env.network.set(DeviceNetwork.none);
+      await env.settle();
+      final before = env.backend.requests.length;
+      auth().loginDemo('demo', 'Demo@123');
+      final s = env.read(authControllerProvider)!;
+      expect(s.isDemo, isTrue);
+      expect(s.requestHeaders, isEmpty);
+      expect(env.backend.requests.length, before, reason: 'no API request');
+      expect(env.sessions.value, isNull, reason: 'demo sessions are never persisted');
+      expect(() => auth().loginDemo('demo', 'wrong'), throwsA(isA<ApiException>()));
+    });
+
+    test('demo data is isolated and never reaches the real server', () async {
+      auth().loginDemo('demo', 'Demo@123');
+      expect(env.read(dataScopeProvider), 'demo');
+      await env.read(serverPageProvider.future);
+      expect(
+        env.backend.requests.where((r) => r.path.contains('/employee/')),
+        isEmpty,
+        reason: 'demo traffic goes to the in-app demo server',
+      );
+      await auth().logout();
+      expect(env.read(dataScopeProvider), 'local');
+      expect(env.backend.requests.where((r) => r.path.endsWith('/auth/logout')), isEmpty);
+    });
+
+    test('a demo logout does not touch a remembered real session', () async {
+      env.sessions.value = testSession();
+      auth().loginDemo('demo', 'Demo@123');
+      await auth().logout();
+      expect(env.sessions.value, isNotNull);
+    });
+
+    test('demo login is refused in production (client mode) builds', () async {
+      final prod = await TestEnv.create(
+        environment: testBuildEnvironment(appEnv: 'production', apiBaseUrl: 'https://api.example.com'),
+      );
+      addTearDown(prod.dispose);
+      expect(() => prod.read(authControllerProvider.notifier).loginDemo('demo', 'Demo@123'), throwsStateError);
+    });
+  });
+
+  test('the login response is redacted from admin diagnostics', () async {
+    await auth().login(testUsername, testPassword, remember: true);
+    final entry = env.read(networkLogProvider).value.firstWhere((e) => e.url.contains('/auth/login'));
+    expect(entry.requestSummary, '[credentials redacted]');
+    expect(entry.responsePreview, '[authentication response redacted]');
+    expect('${entry.requestSummary}${entry.responsePreview}', isNot(contains('tok-123')));
+  });
+
+  test('ApiException keeps the server message separately', () {
+    const e = ApiException(400, 'x', serverMessage: 'x');
+    expect(e.serverMessage, 'x');
   });
 }

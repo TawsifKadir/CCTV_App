@@ -7,11 +7,7 @@ import '../theme/app_colors.dart';
 /// launcher icon) in a rounded tile. Falls back to a vector mark if the
 /// asset cannot be loaded. Change [AppConstants.logoAsset] to rebrand.
 class EnrollyLogoMark extends StatelessWidget {
-  const EnrollyLogoMark({
-    super.key,
-    this.size = 44,
-    this.background = AppColors.peach,
-  });
+  const EnrollyLogoMark({super.key, this.size = 44, this.background = AppColors.peach});
 
   final double size;
   final Color background;
@@ -30,11 +26,7 @@ class EnrollyLogoMark extends StatelessWidget {
           color: background,
           borderRadius: radius,
           boxShadow: [
-            BoxShadow(
-              color: background.withValues(alpha: 0.3),
-              blurRadius: size * 0.3,
-              offset: Offset(0, size * 0.1),
-            ),
+            BoxShadow(color: background.withValues(alpha: 0.3), blurRadius: size * 0.3, offset: Offset(0, size * 0.1)),
           ],
         ),
         child: ClipRRect(
@@ -68,26 +60,10 @@ class _MarkPainter extends CustomPainter {
     final len = w * 0.15;
     // Corner brackets.
     final corners = [
-      [
-        Offset(inset, inset + len),
-        Offset(inset, inset),
-        Offset(inset + len, inset),
-      ],
-      [
-        Offset(w - inset - len, inset),
-        Offset(w - inset, inset),
-        Offset(w - inset, inset + len),
-      ],
-      [
-        Offset(inset, w - inset - len),
-        Offset(inset, w - inset),
-        Offset(inset + len, w - inset),
-      ],
-      [
-        Offset(w - inset - len, w - inset),
-        Offset(w - inset, w - inset),
-        Offset(w - inset, w - inset - len),
-      ],
+      [Offset(inset, inset + len), Offset(inset, inset), Offset(inset + len, inset)],
+      [Offset(w - inset - len, inset), Offset(w - inset, inset), Offset(w - inset, inset + len)],
+      [Offset(inset, w - inset - len), Offset(inset, w - inset), Offset(inset + len, w - inset)],
+      [Offset(w - inset - len, w - inset), Offset(w - inset, w - inset), Offset(w - inset, w - inset - len)],
     ];
     for (final c in corners) {
       canvas.drawPath(
@@ -102,11 +78,7 @@ class _MarkPainter extends CustomPainter {
     // Head.
     canvas.drawCircle(Offset(w / 2, w * 0.43), w * 0.095, fill);
     // Shoulders.
-    final shoulders = Rect.fromCenter(
-      center: Offset(w / 2, w * 0.70),
-      width: w * 0.36,
-      height: w * 0.26,
-    );
+    final shoulders = Rect.fromCenter(center: Offset(w / 2, w * 0.70), width: w * 0.36, height: w * 0.26);
     canvas.drawArc(shoulders, 3.14159, 3.14159, true, fill);
   }
 
@@ -116,12 +88,7 @@ class _MarkPainter extends CustomPainter {
 
 /// Logo mark + wordmark.
 class EnrollyLogo extends StatelessWidget {
-  const EnrollyLogo({
-    super.key,
-    this.size = 40,
-    this.light = false,
-    this.showTagline = false,
-  });
+  const EnrollyLogo({super.key, this.size = 40, this.light = false, this.showTagline = false});
 
   final double size;
   final bool light;
@@ -143,19 +110,10 @@ class EnrollyLogo extends StatelessWidget {
             children: [
               Text(
                 AppConstants.appName,
-                style: t.titleLarge?.copyWith(
-                  color: color,
-                  fontSize: size * 0.5,
-                  height: 1.1,
-                ),
+                style: t.titleLarge?.copyWith(color: color, fontSize: size * 0.5, height: 1.1),
               ),
               if (showTagline)
-                Text(
-                  AppConstants.tagline,
-                  style: t.bodySmall?.copyWith(
-                    color: light ? Colors.white70 : null,
-                  ),
-                ),
+                Text(AppConstants.tagline, style: t.bodySmall?.copyWith(color: light ? Colors.white70 : null)),
             ],
           ),
         ),

@@ -64,7 +64,10 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
     final msg = switch (result?.outcome) {
       UploadOutcome.uploaded => ('${e.name} is now on the server.', SnackType.success),
       UploadOutcome.alreadySynced => ('${e.name} was already on the server and has been linked.', SnackType.success),
-      UploadOutcome.uncertain => ('The server didn\'t confirm the upload. It will be checked before retrying.', SnackType.warning),
+      UploadOutcome.uncertain => (
+        'The server didn\'t confirm the upload. It will be checked before retrying.',
+        SnackType.warning,
+      ),
       UploadOutcome.skipped => ('This employee is already being uploaded.', SnackType.info),
       _ => (result?.message ?? 'Synchronization failed. The employee is still saved on this device.', SnackType.error),
     };
@@ -110,7 +113,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
           const SizedBox(height: Space.md),
           Text(e.name, style: t.headlineSmall, textAlign: TextAlign.center),
           const SizedBox(height: 4),
-          Text(e.designation ?? '—', style: t.bodyLarge?.copyWith(color: p.textMuted), textAlign: TextAlign.center),
+          Text(
+            e.designation ?? '—',
+            style: t.bodyLarge?.copyWith(color: p.textMuted),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: Space.md),
           Wrap(
             alignment: WrapAlignment.center,
@@ -118,92 +125,126 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
             runSpacing: Space.xs,
             children: [
               SyncStatusBadge(record: record, dense: false),
-              if (e.employeeNo != null) AppPill(label: Fmt.employeeNo(e.employeeNo), color: AppColors.peach, showDot: false),
+              if (e.employeeNo != null)
+                AppPill(label: Fmt.employeeNo(e.employeeNo), color: AppColors.peach, showDot: false),
               if (record.isOnServer) SourcePill(employee: e, dense: false),
-              if (features.environmentIndicator) AppPill(label: env.environmentName, color: AppColors.info, icon: Icons.dns_outlined),
+              if (features.environmentIndicator)
+                AppPill(label: env.environmentName, color: AppColors.info, icon: Icons.dns_outlined),
             ],
           ),
         ],
       ),
     );
 
-    final identity = _Section(title: 'Identity', children: [
-      InfoRow(icon: Icons.badge_outlined, label: 'Employee number', value: Fmt.employeeNo(e.employeeNo)),
-      InfoRow(icon: Icons.tag_rounded, label: 'Server employee ID', value: e.id?.toString() ?? 'Not assigned yet'),
-      InfoRow(icon: Icons.person_outline_rounded, label: 'Full name', value: e.name),
-      InfoRow(icon: Icons.cake_outlined, label: 'Date of birth', value: Fmt.date(e.dateOfBirth)),
-      InfoRow(icon: Icons.work_outline_rounded, label: 'Designation', value: e.designation),
-    ]);
+    final identity = _Section(
+      title: 'Identity',
+      children: [
+        InfoRow(icon: Icons.badge_outlined, label: 'Employee number', value: Fmt.employeeNo(e.employeeNo)),
+        InfoRow(icon: Icons.tag_rounded, label: 'Server employee ID', value: e.id?.toString() ?? 'Not assigned yet'),
+        InfoRow(icon: Icons.person_outline_rounded, label: 'Full name', value: e.name),
+        InfoRow(icon: Icons.cake_outlined, label: 'Date of birth', value: Fmt.date(e.dateOfBirth)),
+        InfoRow(icon: Icons.work_outline_rounded, label: 'Designation', value: e.designation),
+      ],
+    );
 
-    final storage = _Section(title: 'Storage & synchronization', children: [
-      if (local != null && local.isUnsynced)
-        Padding(
-          padding: const EdgeInsets.only(bottom: Space.sm),
-          child: AppBanner(
-            key: const Key('not-uploaded-banner'),
-            type: local.needsReconciliation || local.syncStatus == SyncStatus.failed ? SnackType.warning : SnackType.info,
-            title: local.needsReconciliation ? 'Needs review' : 'Not yet uploaded',
-            message: local.needsReconciliation
-                ? 'The app could not confirm whether the server saved this employee. Before uploading again it '
-                    'will search the server for a matching record, so the employee isn\'t registered twice.'
-                : 'This employee is saved on this device and has not reached the server yet. '
-                    'It will be uploaded when you synchronize.',
+    final storage = _Section(
+      title: 'Storage & synchronization',
+      children: [
+        if (local != null && local.isUnsynced)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Space.sm),
+            child: AppBanner(
+              key: const Key('not-uploaded-banner'),
+              type: local.needsReconciliation || local.syncStatus == SyncStatus.failed
+                  ? SnackType.warning
+                  : SnackType.info,
+              title: local.needsReconciliation ? 'Needs review' : 'Not yet uploaded',
+              message: local.needsReconciliation
+                  ? 'The app could not confirm whether the server saved this employee. Before uploading again it '
+                        'will search the server for a matching record, so the employee isn\'t registered twice.'
+                  : 'This employee is saved on this device and has not reached the server yet. '
+                        'It will be uploaded when you synchronize.',
+            ),
           ),
+        InfoRow(
+          icon: Icons.storage_rounded,
+          label: 'Stored',
+          value: switch ((record.isOnServer, local != null)) {
+            (true, true) => 'On the server and on this device',
+            (true, false) => 'On the server',
+            (false, _) => 'On this device only',
+          },
         ),
-      InfoRow(
-        icon: Icons.storage_rounded,
-        label: 'Stored',
-        value: switch ((record.isOnServer, local != null)) {
-          (true, true) => 'On the server and on this device',
-          (true, false) => 'On the server',
-          (false, _) => 'On this device only',
-        },
-      ),
-      InfoRow(icon: Icons.sync_rounded, label: 'Sync status', value: record.statusLabel),
-      if (local != null) ...[
-        InfoRow(icon: Icons.schedule_rounded, label: 'Last sync attempt', value: local.lastSyncAttempt == null ? 'Never' : Fmt.dateTime(local.lastSyncAttempt)),
-        InfoRow(icon: Icons.cloud_done_outlined, label: 'Last successful sync', value: local.lastSuccessfulSync == null ? '—' : Fmt.dateTime(local.lastSuccessfulSync)),
-        InfoRow(icon: Icons.fingerprint_rounded, label: 'Local record ID', value: local.localId),
-        if (local.syncError != null) InfoRow(icon: Icons.error_outline_rounded, label: 'Last error', value: local.syncError),
-        if (local.serverWarning != null) InfoRow(icon: Icons.hourglass_top_rounded, label: 'Server note', value: local.serverWarning),
+        InfoRow(icon: Icons.sync_rounded, label: 'Sync status', value: record.statusLabel),
+        if (local != null) ...[
+          InfoRow(
+            icon: Icons.schedule_rounded,
+            label: 'Last sync attempt',
+            value: local.lastSyncAttempt == null ? 'Never' : Fmt.dateTime(local.lastSyncAttempt),
+          ),
+          InfoRow(
+            icon: Icons.cloud_done_outlined,
+            label: 'Last successful sync',
+            value: local.lastSuccessfulSync == null ? '—' : Fmt.dateTime(local.lastSuccessfulSync),
+          ),
+          InfoRow(icon: Icons.fingerprint_rounded, label: 'Local record ID', value: local.localId),
+          if (local.syncError != null)
+            InfoRow(icon: Icons.error_outline_rounded, label: 'Last error', value: local.syncError),
+          if (local.serverWarning != null)
+            InfoRow(icon: Icons.hourglass_top_rounded, label: 'Server note', value: local.serverWarning),
+        ],
+        if (local != null && local.isUnsynced && !local.isTestData) ...[
+          const SizedBox(height: Space.sm),
+          AppPrimaryButton(
+            key: const Key('sync-one'),
+            label: local.needsReconciliation ? 'Check server & sync' : 'Sync this employee',
+            icon: Icons.cloud_upload_outlined,
+            height: 46,
+            loading: _busy || local.syncStatus == SyncStatus.syncing,
+            onPressed: _busy ? null : () => _sync(local),
+          ),
+        ],
       ],
-      if (local != null && local.isUnsynced && !local.isTestData) ...[
-        const SizedBox(height: Space.sm),
-        AppPrimaryButton(
-          key: const Key('sync-one'),
-          label: local.needsReconciliation ? 'Check server & sync' : 'Sync this employee',
-          icon: Icons.cloud_upload_outlined,
-          height: 46,
-          loading: _busy || local.syncStatus == SyncStatus.syncing,
-          onPressed: _busy ? null : () => _sync(local),
-        ),
-      ],
-    ]);
+    );
 
-    final enrollment = _Section(title: 'Enrollment', children: [
-      _CopyRow(label: 'Template ID', value: e.templateId),
-      InfoRow(
-        icon: Icons.memory_rounded,
-        label: 'Template size',
-        value: e.templateBytes == null ? null : '${Fmt.number(e.templateBytes!)} bytes',
-      ),
-      InfoRow(icon: Icons.event_available_outlined, label: record.isOnServer ? 'Enrolled at' : 'Registered on device', value: Fmt.dateTime(e.enrolledAt)),
-      InfoRow(icon: Icons.input_rounded, label: 'Enrollment source', value: record.isOnServer ? e.sourceLabel : 'Assigned by the server after upload'),
-    ]);
+    final enrollment = _Section(
+      title: 'Enrollment',
+      children: [
+        _CopyRow(label: 'Template ID', value: e.templateId),
+        InfoRow(
+          icon: Icons.memory_rounded,
+          label: 'Template size',
+          value: e.templateBytes == null ? null : '${Fmt.number(e.templateBytes!)} bytes',
+        ),
+        InfoRow(
+          icon: Icons.event_available_outlined,
+          label: record.isOnServer ? 'Enrolled at' : 'Registered on device',
+          value: Fmt.dateTime(e.enrolledAt),
+        ),
+        InfoRow(
+          icon: Icons.input_rounded,
+          label: 'Enrollment source',
+          value: record.isOnServer ? e.sourceLabel : 'Assigned by the server after upload',
+        ),
+      ],
+    );
 
     // Admin builds only: raw stored data for debugging.
     final raw = !features.rawRecordDetails
         ? null
-        : _Section(title: 'Raw record (admin)', children: [
-            SelectableText(
-              const JsonEncoder.withIndent('  ').convert({
-                if (record.server != null) 'server': record.server!.toJson(),
-                if (local != null) 'local': local.toJson(),
-              }),
-              key: const Key('raw-record'),
-              style: t.bodySmall?.copyWith(fontFamily: 'monospace'),
-            ),
-          ]);
+        : _Section(
+            title: 'Raw record (admin)',
+            children: [
+              SelectableText(
+                const JsonEncoder.withIndent('  ').convert({
+                  if (record.server != null) 'server': record.server!.toJson(),
+                  if (local != null) 'local': local.toJson(),
+                }),
+                key: const Key('raw-record'),
+                style: t.bodySmall?.copyWith(fontFamily: 'monospace'),
+              ),
+            ],
+          );
 
     final wide = context.screenWidth >= 1000;
     final rightColumn = [

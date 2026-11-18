@@ -29,10 +29,9 @@ class RegistrationResult {
   bool get recognitionDelayed => liveWatchList == false || (warning != null && warning!.isNotEmpty);
 
   /// Message to show when [recognitionDelayed].
-  String get warningMessage =>
-      (warning != null && warning!.isNotEmpty)
-          ? warning!
-          : 'The employee was saved, but live recognition is not available for them yet.';
+  String get warningMessage => (warning != null && warning!.isNotEmpty)
+      ? warning!
+      : 'The employee was saved, but live recognition is not available for them yet.';
 
   factory RegistrationResult.fromJson(int statusCode, Object? json) {
     if (json is! Map) return RegistrationResult(statusCode: statusCode);

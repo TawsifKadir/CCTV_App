@@ -8,11 +8,14 @@ import 'api_interceptors.dart';
 
 /// A decoded JSON response.
 class ApiResponse {
-  const ApiResponse(this.statusCode, this.data);
+  const ApiResponse(this.statusCode, this.data, [this.headers = const {}]);
   final int statusCode;
 
   /// Decoded JSON (`Map`, `List`, …) or `null` for an empty body.
   final Object? data;
+
+  /// Response headers (lower-case names), e.g. `set-cookie`.
+  final Map<String, List<String>> headers;
 }
 
 /// Thin wrapper around [Dio] bound to one [EnvironmentConfig].
@@ -26,9 +29,10 @@ class ApiClient {
     AuthHeaderProvider? authHeader,
     void Function()? onReachable,
     void Function(DioException error)? onUnreachable,
+    void Function()? onUnauthorized,
     bool logRequests = false,
-  })  : _authHeader = authHeader,
-        dio = dio ?? Dio() {
+  }) : _authHeader = authHeader,
+       dio = dio ?? Dio() {
     this.dio.options
       ..baseUrl = environment.apiBaseUrl
       ..connectTimeout = const Duration(seconds: 10)
@@ -36,14 +40,16 @@ class ApiClient {
       // Bodies are decoded here so invalid JSON and empty bodies can be
       // reported precisely, and error bodies are always available.
       ..responseType = ResponseType.plain
-      ..headers['Accept'] = 'application/json';
+      ..headers['Accept'] = 'application/json'
+      // Web: let the browser send/receive session cookies on cross-origin
+      // calls (the backend must allow credentials in its CORS config).
+      ..extra['withCredentials'] = true;
     this.dio.interceptors.addAll([
       if (authHeader != null) AuthHeaderInterceptor(authHeader),
+      CsrfInterceptor(this.dio),
+      if (onUnauthorized != null) UnauthorizedInterceptor(onUnauthorized),
       if (onReachable != null || onUnreachable != null)
-        ConnectionTrackingInterceptor(
-          onReachable: onReachable ?? () {},
-          onUnreachable: onUnreachable ?? (_) {},
-        ),
+        ConnectionTrackingInterceptor(onReachable: onReachable ?? () {}, onUnreachable: onUnreachable ?? (_) {}),
       if (logRequests) SafeLogInterceptor(),
     ]);
   }
@@ -53,10 +59,7 @@ class ApiClient {
   final AuthHeaderProvider? _authHeader;
 
   /// Headers for requests made outside Dio (e.g. `Image.network`).
-  Map<String, String> get imageHeaders {
-    final auth = _authHeader?.call();
-    return auth == null || auth.isEmpty ? const {} : {'Authorization': auth};
-  }
+  Map<String, String> get imageHeaders => _authHeader?.call() ?? const {};
 
   /// Absolute URL for a server-provided path such as `/api/employee/1/photo`.
   String resolveUrl(String pathOrUrl) => environment.resolveUrl(pathOrUrl);
@@ -64,20 +67,30 @@ class ApiClient {
   Future<ApiResponse> get(String path, {Map<String, dynamic>? query, CancelToken? cancelToken}) =>
       _send(() => dio.get<String>(path, queryParameters: query, cancelToken: cancelToken));
 
+  /// Sends a JSON body (`Content-Type: application/json`).
+  Future<ApiResponse> postJson(String path, Map<String, dynamic> body) => _send(
+    () => dio.post<String>(
+      path,
+      data: body,
+      options: Options(contentType: Headers.jsonContentType),
+    ),
+  );
+
   /// Sends `multipart/form-data`. Dio sets the boundary header from [data].
   Future<ApiResponse> postMultipart(
     String path,
     FormData data, {
     ProgressCallback? onSendProgress,
     CancelToken? cancelToken,
-  }) =>
-      _send(() => dio.post<String>(
-            path,
-            data: data,
-            options: Options(sendTimeout: const Duration(seconds: 60), receiveTimeout: const Duration(seconds: 60)),
-            onSendProgress: onSendProgress,
-            cancelToken: cancelToken,
-          ));
+  }) => _send(
+    () => dio.post<String>(
+      path,
+      data: data,
+      options: Options(sendTimeout: const Duration(seconds: 60), receiveTimeout: const Duration(seconds: 60)),
+      onSendProgress: onSendProgress,
+      cancelToken: cancelToken,
+    ),
+  );
 
   Future<ApiResponse> _send(Future<Response<String>> Function() request) async {
     final Response<String> response;
@@ -86,7 +99,7 @@ class ApiClient {
     } on DioException catch (e) {
       throw ApiException.fromDio(e);
     }
-    return ApiResponse(response.statusCode ?? 0, decodeJson(response.data));
+    return ApiResponse(response.statusCode ?? 0, decodeJson(response.data), response.headers.map);
   }
 
   /// Decodes a JSON body. `null` for an empty body.
@@ -95,8 +108,10 @@ class ApiClient {
     try {
       return jsonDecode(body);
     } on FormatException {
-      throw const ApiException.local('The server sent a response the app could not read.',
-          kind: ApiErrorKind.invalidResponse);
+      throw const ApiException.local(
+        'The server sent a response the app could not read.',
+        kind: ApiErrorKind.invalidResponse,
+      );
     }
   }
 

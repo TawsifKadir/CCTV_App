@@ -9,6 +9,8 @@ import '../../features/environments/presentation/widgets/environment_widgets.dar
 import '../../features/sync/presentation/sync_providers.dart';
 import '../../features/sync/presentation/sync_widgets.dart';
 import '../config/app_features.dart';
+import '../../features/authentication/widgets/dev_login_tools.dart' show DemoModeBadge;
+import '../../features/environments/presentation/providers/environment_providers.dart' show isDemoSessionProvider;
 import '../../features/settings/screens/settings_screen.dart' show confirmLogout;
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
@@ -28,21 +30,48 @@ class NavDestination {
   final IconData activeIcon;
 }
 
-const _dashboard =
-    NavDestination(Routes.home, 'Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded, shortLabel: 'Home');
+const _dashboard = NavDestination(
+  Routes.home,
+  'Dashboard',
+  Icons.space_dashboard_outlined,
+  Icons.space_dashboard_rounded,
+  shortLabel: 'Home',
+);
 const _employees = NavDestination(
-    Routes.employees, 'Employee Management', Icons.people_alt_outlined, Icons.people_alt_rounded,
-    shortLabel: 'Employees');
+  Routes.employees,
+  'Employee Management',
+  Icons.people_alt_outlined,
+  Icons.people_alt_rounded,
+  shortLabel: 'Employees',
+);
 const _register = NavDestination(
-    Routes.enroll, 'Register Employee', Icons.person_add_alt_outlined, Icons.person_add_alt_1_rounded,
-    shortLabel: 'Register');
-const _sync = NavDestination(Routes.sync, 'Synchronization', Icons.cloud_sync_outlined, Icons.cloud_sync_rounded,
-    shortLabel: 'Sync');
-const _diagnostics = NavDestination(Routes.diagnostics, 'Diagnostics', Icons.bug_report_outlined, Icons.bug_report_rounded);
+  Routes.enroll,
+  'Register Employee',
+  Icons.person_add_alt_outlined,
+  Icons.person_add_alt_1_rounded,
+  shortLabel: 'Register',
+);
+const _sync = NavDestination(
+  Routes.sync,
+  'Synchronization',
+  Icons.cloud_sync_outlined,
+  Icons.cloud_sync_rounded,
+  shortLabel: 'Sync',
+);
+const _diagnostics = NavDestination(
+  Routes.diagnostics,
+  'Diagnostics',
+  Icons.bug_report_outlined,
+  Icons.bug_report_rounded,
+);
 const _settings = NavDestination(Routes.settings, 'Settings', Icons.tune_outlined, Icons.tune_rounded);
 const _environment = NavDestination(
-    Routes.environment, 'Environment Configuration', Icons.dns_outlined, Icons.dns_rounded,
-    shortLabel: 'Environment');
+  Routes.environment,
+  'Environment Configuration',
+  Icons.dns_outlined,
+  Icons.dns_rounded,
+  shortLabel: 'Environment',
+);
 
 /// Mobile bottom bar (both modes): Dashboard, Employees, [Register], Sync, Settings.
 const mobileDestinations = [_dashboard, _employees, _register, _sync, _settings];
@@ -50,14 +79,14 @@ const mobileDestinations = [_dashboard, _employees, _register, _sync, _settings]
 /// Desktop sidebar (Logout is rendered separately at the bottom). Admin
 /// builds add environment configuration and diagnostics.
 List<NavDestination> sidebarDestinations(AppFeatures f) => [
-      _dashboard,
-      _employees,
-      _register,
-      _sync,
-      _settings,
-      if (f.environmentConfiguration) _environment,
-      if (f.networkInspector) _diagnostics,
-    ];
+  _dashboard,
+  _employees,
+  _register,
+  _sync,
+  _settings,
+  if (f.environmentConfiguration) _environment,
+  if (f.networkInspector) _diagnostics,
+];
 
 bool _isActive(String location, String path) => location == path || location.startsWith('$path/');
 
@@ -90,7 +119,9 @@ class AppShell extends ConsumerWidget {
     final page = Column(
       children: [
         const ShellStatusBar(),
-        Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: child)),
+        Expanded(
+          child: MediaQuery.removePadding(context: context, removeTop: true, child: child),
+        ),
       ],
     );
 
@@ -150,10 +181,14 @@ class AppBottomNavigation extends StatelessWidget {
                 child: Row(
                   children: [
                     for (var i = 0; i < 2; i++)
-                      Expanded(child: _NavItem(dest: items[i], active: _isActive(location, items[i].path))),
+                      Expanded(
+                        child: _NavItem(dest: items[i], active: _isActive(location, items[i].path)),
+                      ),
                     const SizedBox(width: 76),
                     for (var i = 2; i < 4; i++)
-                      Expanded(child: _NavItem(dest: items[i], active: _isActive(location, items[i].path))),
+                      Expanded(
+                        child: _NavItem(dest: items[i], active: _isActive(location, items[i].path)),
+                      ),
                   ],
                 ),
               ),
@@ -192,10 +227,9 @@ class _NavItem extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                    color: color,
-                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall!.copyWith(color: color, fontWeight: active ? FontWeight.w700 : FontWeight.w500),
             ),
           ],
         ),
@@ -271,7 +305,11 @@ class _CenterRegisterButtonState extends State<_CenterRegisterButton> with Singl
                     shape: BoxShape.circle,
                     border: Border.all(color: bg, width: 4),
                     boxShadow: [
-                      BoxShadow(color: AppColors.peach.withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 5)),
+                      BoxShadow(
+                        color: AppColors.peach.withValues(alpha: 0.4),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
                   child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
@@ -350,8 +388,11 @@ class AppSidebar extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(AppConstants.appName, style: t.titleLarge?.copyWith(color: Colors.white)),
-                            Text('Identity management',
-                                style: t.labelSmall?.copyWith(color: Colors.white54), overflow: TextOverflow.ellipsis),
+                            Text(
+                              'Identity management',
+                              style: t.labelSmall?.copyWith(color: Colors.white54),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ],
                         ),
                       ),
@@ -359,10 +400,7 @@ class AppSidebar extends ConsumerWidget {
                     ],
                   ],
                 ),
-                if (collapsed) ...[
-                  const SizedBox(height: 12),
-                  Center(child: _CollapseButton(collapsed: collapsed)),
-                ],
+                if (collapsed) ...[const SizedBox(height: 12), Center(child: _CollapseButton(collapsed: collapsed))],
                 const SizedBox(height: 16),
                 const SizedBox(height: 16),
                 _SidebarRegisterButton(collapsed: collapsed),
@@ -384,7 +422,7 @@ class AppSidebar extends ConsumerWidget {
                   ),
                 ),
                 if (operator != null && !collapsed) ...[
-                  _OperatorCard(name: operator.fullName, email: operator.email),
+                  _OperatorCard(name: operator.operator.fullName, email: operator.operator.username),
                   const SizedBox(height: 8),
                 ],
                 _SidebarItem(
@@ -446,7 +484,11 @@ class _SidebarRegisterButton extends StatelessWidget {
                 if (!collapsed) ...[
                   const SizedBox(width: 8),
                   Flexible(
-                    child: Text('New Employee', style: t.labelLarge?.copyWith(color: Colors.white), overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      'New Employee',
+                      style: t.labelLarge?.copyWith(color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ],
@@ -519,7 +561,10 @@ class _SidebarItemState extends State<_SidebarItem> {
                       Expanded(
                         child: Text(
                           widget.label,
-                          style: t.labelLarge?.copyWith(color: fg, fontWeight: active ? FontWeight.w700 : FontWeight.w500),
+                          style: t.labelLarge?.copyWith(
+                            color: fg,
+                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -555,15 +600,26 @@ class _OperatorCard extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.peach.withValues(alpha: 0.2),
-            child: Text(Fmt.initials(name), style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w700)),
+            child: Text(
+              Fmt.initials(name),
+              style: t.labelMedium?.copyWith(color: AppColors.peach, fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: t.labelLarge?.copyWith(color: Colors.white), overflow: TextOverflow.ellipsis),
-                Text(email, style: t.labelSmall?.copyWith(color: Colors.white54), overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  style: t.labelLarge?.copyWith(color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  email,
+                  style: t.labelSmall?.copyWith(color: Colors.white54),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -594,11 +650,27 @@ class ShellStatusBar extends ConsumerWidget {
             height: wide ? 46 : 30,
             child: Row(
               children: [
-                if (features.environmentIndicator) ...[const EnvironmentBadge(dense: true), const SizedBox(width: Space.xs)],
-                const ConnectivityPill(),
-                const SizedBox(width: Space.xs),
-                const PendingSyncChip(),
-                const Spacer(),
+                // Scrolls instead of overflowing on narrow phones.
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        if (!kProductionBuild && ref.watch(isDemoSessionProvider)) ...[
+                          const DemoModeBadge(),
+                          const SizedBox(width: Space.xs),
+                        ],
+                        if (features.environmentIndicator) ...[
+                          const EnvironmentBadge(dense: true),
+                          const SizedBox(width: Space.xs),
+                        ],
+                        const ConnectivityPill(),
+                        const SizedBox(width: Space.xs),
+                        const PendingSyncChip(),
+                      ],
+                    ),
+                  ),
+                ),
                 if (wide) const SyncNowButton(height: 40),
               ],
             ),

@@ -15,19 +15,19 @@ enum CameraIssue {
   failure;
 
   String get title => switch (this) {
-        CameraIssue.permissionDenied => 'Camera access was denied',
-        CameraIssue.noCamera => 'No camera found',
-        CameraIssue.unsupported => 'Camera not supported here',
-        CameraIssue.failure => 'The camera could not start',
-      };
+    CameraIssue.permissionDenied => 'Camera access was denied',
+    CameraIssue.noCamera => 'No camera found',
+    CameraIssue.unsupported => 'Camera not supported here',
+    CameraIssue.failure => 'The camera could not start',
+  };
 
   String get message => switch (this) {
-        CameraIssue.permissionDenied =>
-          'Allow camera access in your browser or device settings, then try again. You can also upload a photo instead.',
-        CameraIssue.noCamera => 'Connect a camera or upload an existing photograph instead.',
-        CameraIssue.unsupported => 'This platform does not support live capture. Please upload a photograph.',
-        CameraIssue.failure => 'Something went wrong while starting the camera. Try again or upload a photo.',
-      };
+    CameraIssue.permissionDenied =>
+      'Allow camera access in your browser or device settings, then try again. You can also upload a photo instead.',
+    CameraIssue.noCamera => 'Connect a camera or upload an existing photograph instead.',
+    CameraIssue.unsupported => 'This platform does not support live capture. Please upload a photograph.',
+    CameraIssue.failure => 'Something went wrong while starting the camera. Try again or upload a photo.',
+  };
 }
 
 class CameraIssueException implements Exception {

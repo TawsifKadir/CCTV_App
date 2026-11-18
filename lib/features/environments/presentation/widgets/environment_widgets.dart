@@ -80,9 +80,16 @@ class ConnectionIndicator extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 6),
-          Text(label, style: t.labelMedium?.copyWith(color: onDark ? Colors.white : null, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: t.labelMedium?.copyWith(color: onDark ? Colors.white : null, fontWeight: FontWeight.w600),
+          ),
           if (showLastSuccess && status.lastSuccessAt != null) ...[
             const SizedBox(width: 6),
             Flexible(
@@ -120,11 +127,9 @@ class EnvironmentStrip extends ConsumerWidget {
               '${env.environmentName.toUpperCase()} · ${env.baseUrl}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: 0.4),
             ),
           ),
         ),

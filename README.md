@@ -6,7 +6,6 @@ Enrolly is a Flutter app for registering employees with a photograph and browsin
 
 - The backend is the source of truth. Registrations are saved on the device first and synchronized, so nothing is lost while offline.
 - The app does not detect or recognise faces. It only captures or uploads the photograph.
-- Operator sign-in is still a **local demo** because the backend has no authentication API yet (see [Authentication](#authentication)).
 
 ---
 
@@ -20,11 +19,7 @@ flutter pub get
 flutter run -d chrome --dart-define=APP_ENV=local
 ```
 
-3. Sign in with the demo operator, or create an operator account:
-
-| Email | Password |
-|---|---|
-| `admin@enrolly.demo` | `Admin@123` |
+3. Sign in with a backend account, or (development builds) **Continue with Demo Account**.
 
 ## Backend environments
 
@@ -326,13 +321,33 @@ tool/
 
 ## Authentication
 
-The two backend APIs do not authenticate, so operator sign-in is a **clearly labelled on-device demo** (`DemoAuthApi`). Passwords are stored as salted PBKDF2 hashes.
+**Real sign-in** (every build) goes through the shared `ApiClient` on the active environment: `POST /api/auth/login` with the JSON body `{"username","password"}`.
 
-When a real auth API exists:
+- **Confirmed response:**
+  - Success: `{token, role, username, expiresIn}` (expiry in seconds).
+  - Wrong credentials: 401 `{message}`.
+- **Authenticated requests:** the token is sent as `Authorization: Bearer …` on every request. Employee endpoints require it.
+- **CSRF:** Spring Security CSRF uses an `XSRF-TOKEN` cookie. On the first sign-in the server answers 403 with a token; the app stores it and retries once with `X-XSRF-TOKEN`. Bearer requests don't need CSRF.
+- **Session storage:** with "Remember me" on, the session is kept in `flutter_secure_storage` (30-minute expiry). With it off, it lives in memory only.
+- **Session expiry:** a 401 on any request signs the user out with "Your session has expired."
+- **Logout** calls `POST /api/auth/logout` and then clears the stored session.
+- **Offline:** sign-in is refused without a network connection.
 
-1. Implement `AuthApi` (`lib/data/remote/api_contracts.dart`) over `ApiClient`.
-2. Return it from `authApiProvider`.
-3. Return the token from `authHeaderProvider` (`lib/core/services/providers.dart`). The HTTP client and photo requests already send it as an `Authorization` header.
+**Demo login** (local/development/QA builds only): **Continue with Demo Account** (`demo` / `Demo@123`).
+
+- The credentials are checked on the device. No HTTP request is made, it works offline, and the session is never persisted.
+- The app shows **DEMO MODE** while it is active.
+- Demo data is fully isolated:
+  - On-device data uses a separate `demo` scope.
+  - The HTTP client talks to an in-app demo server (`lib/features/demo/demo_backend.dart`) instead of the real backend, so demo registrations exercise the real registration and sync code but can never reach a server.
+  - Diagnostics → Tools can simulate that server being down.
+- **Production builds:** the demo login, the demo server and the demo strings are removed by the compiler. This was verified in the built web bundle.
+
+**Real test credentials** belong in the git-ignored `config/local.secrets.json` (copy `config/local.secrets.example.json`). They are used only by the live tests:
+
+```bash
+flutter test test/live --dart-define-from-file=config/local.secrets.json
+```
 
 ## Themes
 
